@@ -1,0 +1,14 @@
+# build artifacts
+*.vvp
+*.blif
+*.d
+*.json
+*.asc
+
+# test artifacts
+__pycache__
+*.pyc
+.coverage
+*.fst
+results.xml
+test_profile.pstat
