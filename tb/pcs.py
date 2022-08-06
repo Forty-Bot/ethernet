@@ -272,8 +272,10 @@ async def test_rx(pcs):
         (Code('C'), Code('I'), Code('I')),
         (Code('J'), Code('I'), Code('I')),
         (Code('J'), Code('H'), Code('I'), Code('I')),
-        # Premature end
-        (Code('J'), Code('K'), Code('I'), Code('I')),
+        # Premature end, plus two clocks since we don't have instant turnaround
+        (Code('J'), Code('K'), Code('I'), Code('I'), (1,1)),
+        # Packet spacing
+        *((*frame([0x55, 0x55]), (1,) * i) for i in range(10))
     )))
 
     assert packet == await alist(mii_recv_packet(pcs))
@@ -287,10 +289,5 @@ async def test_rx(pcs):
     assert [0x5, 0x5, None] == await alist(mii_recv_packet(pcs))
 
     # Test packet spacing
-    packet = [0x5, 0x5]
-    await cocotb.start(pcs_send_codes(pcs, itertools.chain(
-        *((*frame(packet), (1,) * i) for i in range(10))
-    )))
-
     for _ in range(10):
         assert [0x5, 0x5] == await alist(mii_recv_packet(pcs))
