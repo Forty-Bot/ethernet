@@ -174,12 +174,12 @@ async def pcs_recv_packet(pcs):
     while all(rx_bits[9:2]) or rx_bits[0]:
         await read_bit()
 
-    if (Code.decode(rx_bits[9:5]) != Code('I') or \
-        Code.decode(rx_bits[4:0]) != Code('J')):
+    if Code.decode(rx_bits[9:5]) != Code('I') or \
+       Code.decode(rx_bits[4:0]) != Code('J'):
         await bad_ssd()
 
     await read_code()
-    if (Code.decode(rx_bits[4:0]) != Code('K')):
+    if Code.decode(rx_bits[4:0]) != Code('K'):
         await bad_ssd()
 
     yield 0x5
@@ -189,7 +189,7 @@ async def pcs_recv_packet(pcs):
     while any(rx_bits[9:0]):
         await read_code()
         code = Code.decode(rx_bits[9:5])
-        if (code == Code('T') and Code.decode(rx_bits[4:0]) == Code('R')):
+        if code == Code('T') and Code.decode(rx_bits[4:0]) == Code('R'):
             return
         yield code.data
     raise PrematureEndError()
