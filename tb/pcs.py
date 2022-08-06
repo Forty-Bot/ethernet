@@ -224,7 +224,6 @@ async def pcs_send_codes(pcs, codes):
 
 @cocotb.test(timeout_time=10, timeout_unit='us')
 async def test_tx(pcs):
-    await cocotb.start(Clock(pcs.tx_clk, 8, units='ns').start())
     async def tx_ce():
         pcs.tx_ce.value = 1
         while True:
@@ -232,12 +231,14 @@ async def test_tx(pcs):
             pcs.tx_ce.value = 0
             await ClockCycles(pcs.tx_clk, 4, False)
             pcs.tx_ce.value = 1
-    await cocotb.start(tx_ce())
 
     pcs.tx_en.value = 0
     pcs.tx_er.value = 0
     pcs.txd.value = LogicArray("XXXX")
     pcs.link_status.value = 1
+    await cocotb.start(tx_ce())
+    await Timer(1)
+    await cocotb.start(Clock(pcs.tx_clk, 8, units='ns').start())
     await FallingEdge(pcs.tx_ce)
 
     # Test that all bytes can be transmitted
