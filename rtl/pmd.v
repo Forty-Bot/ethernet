@@ -79,8 +79,8 @@ module pmd (
 	 * posedge.
 	 */
 	always @(posedge rx_clk_250) begin
-		rx_p[1] = rx_p[0];
-		rx_n[1] = rx_n[0];
+		rx_p[1] <= rx_p[0];
+		rx_n[1] <= rx_n[0];
 	end
 
 	reg [2:0] rx_a, rx_b, rx_c, rx_d;
