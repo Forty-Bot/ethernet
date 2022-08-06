@@ -35,7 +35,7 @@ async def test_rx(pmd):
     await cocotb.start(generate_bits())
 
     # Wait for things to stabilize
-    await RisingEdge(pmd.valid)
+    await RisingEdge(pmd.signal_status)
     outs = []
     while pmd.signal_status.value:
         await RisingEdge(pmd.rx_clk_125)
