@@ -334,7 +334,9 @@ module pcs_rx_bits (
 	endfunction
 
 	always @(*) begin
-		idle_next = &raw_bits[10:1];
+		idle_next = idle;
+		if (bits_valid != 0)
+			idle_next = &raw_bits[10:1];
 		if (bits_valid & 2)
 			idle_next = idle_next || &raw_bits[9:0];
 
