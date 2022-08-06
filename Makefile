@@ -14,12 +14,29 @@ all: rtl/pcs.asc
 FORCE:
 
 %.json: %.v
-	$(SYNTH) -q -E $@.d -p "synth_ice40 -top top" -b json -o $@ -f verilog $<
+	$(SYNTH) -q -E $@.d -p "synth_ice40 -top $(*F)" -b json -o $@ -f verilog $<
 
+%.post.v: %.json %.v
+	( grep timescale $*.v && echo '`include "common.vh"' && \
+	  $(SYNTH) -q -b verilog -f json $< ) | sed 's/endmodule/`DUMP(1)\n\0/g' > $@
+
+IFLAGS := -g2012 -Wall
+
+define run-icarus =
+$(ICARUS) $(IFLAGS) -I$(<D) -M$@.pre -s $(TOP) -o $@ $< $(EXTRA_V) && \
+	( echo -n "$@: " && tr '\n' ' ' ) < $@.pre > $@.d; RET=$$?; rm -f $@.pre; exit $$RET
+endef
+
+%.vvp: TOP = $(*F)
 %.vvp: %.v
-	echo "+timescale+1ns/1ns" | \
-	$(ICARUS) -Wall -c /dev/stdin -I$(<D) -M$@.pre -s $(*F) -o $@ $< && \
-		( echo -n "$@: " && tr '\n' ' ' ) < $@.pre > $@.d; RET=$$?; rm -f $@.pre; exit $$RET
+	$(run-icarus)
+
+%.post.vvp: TOP = $(*F)
+%.post.vvp: EXTRA_V := $(shell $(SYNTH)-config --datdir)/ice40/cells_sim.v
+# Don't warn about unused SB_IO ports
+%.post.vvp: IFLAGS += -Wno-portbind
+%.post.vvp: %.post.v
+	$(run-icarus)
 
 %.asc: %.json
 	$(PNR) --pcf-allow-unconstrained --freq 125 --hx8k --package ct256 --json $< --asc $@
@@ -27,16 +44,23 @@ FORCE:
 -include $(wildcard rtl/*.d)
 
 export LIBPYTHON_LOC := $(shell cocotb-config --libpython)
-VVPARGS := -M $(shell cocotb-config --lib-dir)
-VVPARGS += -m $(shell cocotb-config --lib-name vpi icarus)
+VVPFLAGS := -M $(shell cocotb-config --lib-dir)
+VVPFLAGS += -m $(shell cocotb-config --lib-name vpi icarus)
+
+define run-vvp =
+MODULE=tb.$* $(VVP) $(VVPFLAGS) $< -fst +vcd=$@
+endef
 
 %.fst: rtl/%.vvp tb/%.py FORCE
-	MODULE=tb.$* $(VVP) $(VVPARGS) $< -fst +vcd=$@
+	$(run-vvp)
+
+%.post.fst: rtl/%.post.vvp tb/%.py FORCE
+	$(run-vvp)
 
 .PHONY: test
-test: test_pcs
+test: $(addsuffix .fst,pcs pmd) $(addsuffix .post.fst,pcs pmd)
 
 .PHONY: clean
 clean:
 	rm *.fst
-	cd rtl && rm -f *.json *.asc *.vvp *.d *.pre
+	cd rtl && rm -f *.json *.asc *.pre *.vvp *.d *.post.v
