@@ -92,7 +92,7 @@ module pcs (
 	assign col = transmitting && receiving;
 	assign crs = transmitting || receiving;
 
-	`DUMP
+	`DUMP(0)
 
 endmodule
 

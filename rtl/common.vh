@@ -7,14 +7,14 @@
 `define COMMON_VH
 
 `ifdef SYNTHESIS
-`define DUMP
+`define DUMP(levels)
 `else
-`define DUMP \
+`define DUMP(levels) \
 	reg [4096:0] vcdfile; \
 	initial begin \
 		if ($value$plusargs("vcd=%s", vcdfile)) begin \
 			$dumpfile(vcdfile); \
-			$dumpvars; \
+			$dumpvars(levels); \
 		end \
 	end
 `endif

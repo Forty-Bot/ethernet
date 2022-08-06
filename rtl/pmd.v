@@ -225,6 +225,6 @@ module pmd (
 	end
 `endif
 
-	`DUMP
+	`DUMP(0)
 
 endmodule
