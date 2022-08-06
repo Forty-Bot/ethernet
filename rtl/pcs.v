@@ -209,14 +209,15 @@ module pcs_tx (
 		end
 		endcase
 
+		if (!link_status) begin
+			tx_next = 0;
+			code_next = `CODE_I;
+			state_next = IDLE;
+		end
 	end
 
-	always @(posedge clk, negedge link_status) begin
-		if (!link_status) begin
-			tx <= 0;
-			code <= `CODE_I;
-			state <= IDLE;
-		end else if (ce) begin
+	always @(posedge clk) begin
+		if (ce) begin
 			last_data <= data;
 			tx <= tx_next;
 			code <= code_next;
