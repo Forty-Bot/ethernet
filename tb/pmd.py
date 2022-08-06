@@ -25,7 +25,10 @@ async def test_rx(pmd):
         delay_dist = NormalDist(8000, 1400 / NormalDist().inv_cdf(1-2e-9))
         for i, delay in zip(ins, (int(delay) for delay in delay_dist.samples(len(ins)))):
             pmd.rx.value = i
-            pmd.delay.value = delay
+            try:
+                pmd.delay.value = delay
+            except AttributeError:
+                pass
             await Timer(delay, units='ps')
             #await Timer(8100, units='ps')
         pmd.signal_detect.value = 0
