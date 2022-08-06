@@ -279,7 +279,7 @@ async def test_rx(pcs):
     assert packet == await alist(mii_recv_packet(pcs))
 
     for _ in range(3):
-        while not (pcs.receiving.value and pcs.rx_er.value and pcs.rx_ce):
+        while not (pcs.receiving.value and pcs.rx_er.value and pcs.rx_ce.value):
             await RisingEdge(pcs.rx_clk)
         assert pcs.rxd.value == 0xE
         await FallingEdge(pcs.receiving)
