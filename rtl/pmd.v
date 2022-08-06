@@ -23,13 +23,14 @@ module pmd (
 	input rx,
 
 	/* PMD */
-	output reg signal_status,
+	output signal_status,
 	input pmd_data_tx,
 	output reg [1:0] pmd_data_rx,
 	output reg [1:0] pmd_data_rx_valid
 );
 
 	reg [1:0] rx_p, rx_n;
+	reg [3:0] sd_delay;
 
 `ifdef SYNTHESIS
 	SB_IO #(
@@ -38,7 +39,7 @@ module pmd (
 	) signal_detect_pin (
 		.PACKAGE_PIN(signal_detect),
 		.INPUT_CLK(rx_clk_125),
-		.D_IN_0(signal_status)
+		.D_IN_0(sd_delay[0])
 	);
 
 	SB_IO #(
@@ -52,7 +53,7 @@ module pmd (
 	);
 `else
 	always @(posedge rx_clk_125)
-		signal_status <= signal_detect;
+		sd_delay[0] <= signal_detect;
 
 	always @(posedge rx_clk_250)
 		rx_p[0] <= rx;
@@ -60,6 +61,17 @@ module pmd (
 	always @(negedge rx_clk_250)
 		rx_n[0] <= rx;
 `endif
+
+	/*
+	 * Delay signal status until the known good data has had a chance to
+	 * make it through the pipeline. This isn't necessary for real hardware
+	 * (since signal status is asserted long after we have good data), but
+	 * it helps out during simulation. It also helps avoid metastability.
+	 */
+	always @(posedge rx_clk_125)
+		sd_delay[3:1] <= sd_delay[2:0];
+
+	assign signal_status = sd_delay[3];
 
 	/*
 	 * Get things into the rx_clk_250 domain so that we sample posedge before
@@ -135,8 +147,10 @@ module pmd (
 		else
 			valid_next = valid;
 
-		if (!signal_status)
+		if (!signal_status) begin
+			state_next = A;
 			valid_next = 0;
+		end
 		
 		pmd_data_rx_next[0] = rx_d[2];
 		pmd_data_rx_valid_next = 1;
