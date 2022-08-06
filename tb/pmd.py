@@ -6,6 +6,9 @@ from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 
+def print_list_at(l, i):
+    print(' ' * max(50 - i, 0), *l[max(i - 50, 0):i+50], sep='')
+
 @cocotb.test(timeout_time=100, timeout_unit='us')
 async def test_rx(pmd):
     pmd.signal_detect.value = 0
@@ -60,8 +63,8 @@ async def test_rx(pmd):
     for idx, (i, o) in enumerate(zip(ins[best_off:], outs)):
         if i != o:
             print(idx)
-            print(*ins[idx+best_off-50:idx+best_off+50], sep='')
-            print(*outs[idx-50:idx+50], sep='')
+            print_list_at(ins, idx + best_off)
+            print_list_at(outs, idx)
             assert False
     # There will be a few bits at the end not recorded because signal_detect
     # isn't delayed like the data signals
