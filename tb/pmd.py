@@ -8,7 +8,8 @@ from cocotb.triggers import RisingEdge, Timer
 
 @cocotb.test(timeout_time=100, timeout_unit='us')
 async def test_rx(pmd):
-    pmd.rx.value = BinaryValue('X')
+    pmd.signal_detect.value = 0
+    await Timer(1)
     await cocotb.start(Clock(pmd.rx_clk_125, 8, units='ns').start())
     # random phase
     await Timer(random.randrange(0, 8000), units='ps')
