@@ -450,8 +450,6 @@ module pcs_rx (
 	reg ce_next, valid_next, err_next;
 	reg [2:0] state, state_next;
 	initial state = IDLE;
-	/* Receive shift buffer */
-	reg [9:0] buffer, buffer_next;
 	/* Whether we are aligned and receiving */
 	reg rx_next;
 
@@ -645,7 +643,7 @@ module top (
 
 	reg [11:0] in;
 	always @(posedge clk)
-		in = { in[10:0], in_next };
+		in <= { in[10:0], in_next };
 
 	wire tx_ce;
 	wire tx_en;
@@ -668,7 +666,7 @@ module top (
 	reg [9:0] out_next;
 
 	always @(posedge clk)
-		out_next = { rx_ce, rx_dv, rxd, rx_er, pma_data_tx, crs, col };
+		out_next <= { rx_ce, rx_dv, rxd, rx_er, pma_data_tx, crs, col };
 
 	assign out = ^out_next;
 
