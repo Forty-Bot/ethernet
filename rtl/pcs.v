@@ -439,7 +439,8 @@ module pcs_rx (
 	localparam START_K	= 2;
 	localparam BAD_SSD	= 3;
 	localparam DATA		= 4;
-	localparam FAILED	= 5;
+	localparam PREMATURE	= 5;
+	localparam FAILED	= 6;
 
 	reg start, flush;
 	wire activity, idle, indicate;
@@ -570,7 +571,7 @@ end
 			`CODE_I: begin
 				err_next = 1;
 				if (aligned[4:0] == `CODE_I)
-					state_next = IDLE;
+					state_next = PREMATURE;
 			end
 			default:
 				err_next = 1;
@@ -578,6 +579,11 @@ end
 
 			if (!indicate)
 				state_next = DATA;
+		end
+		PREMATURE: begin
+			valid_next = 0;
+			if (indicate)
+				state_next = IDLE;
 		end
 		FAILED: begin
 			err_next = 1;
@@ -623,6 +629,7 @@ end
 		START_K: state_text = "START_K";
 		BAD_SSD: state_text = "BAD_SSD";
 		DATA: state_text = "DATA";
+		PREMATURE: state_text = "PREMATURE";
 		FAILED: state_text = "FAILED";
 		endcase
 	end
