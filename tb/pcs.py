@@ -224,7 +224,7 @@ async def pcs_send_codes(pcs, codes):
 
 @cocotb.test(timeout_time=10, timeout_unit='us')
 async def test_tx(pcs):
-    await cocotb.start(Clock(pcs.tx_clk, 1/125e6, units='sec').start())
+    await cocotb.start(Clock(pcs.tx_clk, 8, units='ns').start())
     async def tx_ce():
         pcs.tx_ce.value = 1
         while True:
@@ -259,7 +259,7 @@ async def test_rx(pcs):
     pcs.pma_data_rx_valid.value = 2
     pcs.link_status.value = 1
     await Timer(1)
-    await cocotb.start(Clock(pcs.rx_clk, 1/125e6, units='sec').start())
+    await cocotb.start(Clock(pcs.rx_clk, 8, units='ns').start())
 
     packet = list(as_nibbles((0x55, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF)))
     # And test errors too
