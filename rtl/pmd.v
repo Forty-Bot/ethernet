@@ -37,7 +37,7 @@ module pmd (
 		.IO_STANDARD("SB_LVDS_INPUT")
 	) signal_detect_pin (
 		.PACKAGE_PIN(signal_detect),
-		.INPUT_rx_clk(rx_clk_125),
+		.INPUT_CLK(rx_clk_125),
 		.D_IN_0(signal_status)
 	);
 
@@ -46,7 +46,7 @@ module pmd (
 		.IO_STANDARD("SB_LVDS_INPUT")
 	) data_rx_pin (
 		.PACKAGE_PIN(rx),
-		.INPUT_rx_clk(rx_clk_250),
+		.INPUT_CLK(rx_clk_250),
 		.D_IN_0(rx_p[0]),
 		.D_IN_1(rx_n[0])
 	);
@@ -178,7 +178,7 @@ module pmd (
 		.IO_STANDARD("SB_LVDS_INPUT")
 	) data_txp_pin (
 		.PACKAGE_PIN(tx_p),
-		.OUTPUT_rx_clk(rx_clk_125),
+		.OUTPUT_CLK(rx_clk_125),
 		.D_OUT_0(pmd_data_tx)
 	);
 
@@ -187,7 +187,7 @@ module pmd (
 		.IO_STANDARD("SB_LVDS_INPUT")
 	) data_txn_pin (
 		.PACKAGE_PIN(tx_n),
-		.OUTPUT_rx_clk(rx_clk_125),
+		.OUTPUT_CLK(rx_clk_125),
 		.D_OUT_0(pmd_data_tx)
 	);
 `else
