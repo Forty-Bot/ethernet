@@ -32,13 +32,13 @@ async def test_rx(pmd, delays):
     await Timer(1)
     await cocotb.start(Clock(pmd.rx_clk_125, 8, units='ns').start())
     # random phase
-    await Timer(random.randrange(0, 8000), units='ps')
+    await Timer(random.randrange(1, 8000), units='ps')
     await cocotb.start(Clock(pmd.rx_clk_250, 4, units='ns').start())
 
     ins = [random.randrange(2) for _ in range(BITS)]
     async def generate_bits():
         # random phase
-        await Timer(random.randrange(0, 8000), units='ps')
+        await Timer(random.randrange(1, 8000), units='ps')
         pmd.signal_detect.value = 1
         for i, delay in zip(ins, delays(len(ins))):
             pmd.rx.value = i
