@@ -7,10 +7,11 @@ import itertools
 
 import cocotb
 from cocotb.clock import Clock
+from cocotb.regression import TestFactory
 from cocotb.triggers import ClockCycles, Edge, RisingEdge, FallingEdge, Timer
 from cocotb.types import LogicArray
 
-from .util import alist, classproperty, ReverseList
+from .util import alist, classproperty, ReverseList, timeout
 
 class Code(enum.Enum):
     _0 = (0b11110, '0')
@@ -194,14 +195,34 @@ async def pcs_recv_packet(pcs):
         yield code.data
     raise PrematureEndError()
 
-async def pcs_send_codes(pcs, codes):
+def one_valid():
+    return 1
+
+def two_valid():
+    return 2
+
+def rand_valid():
+    return random.randrange(3)
+
+class saw_valid:
+    def __init__(self):
+        self.last = 0
+        # Lie for TestFactory
+        self.__qualname__ = self.__class__.__qualname__
+
+    def __call__(self):
+        self.last += 1
+        if self.last > 2:
+            self.last = 0
+        return self.last
+
+async def pcs_send_codes(pcs, codes, valids):
     await FallingEdge(pcs.rx_clk)
     codes = list(codes)
     bits = itertools.chain(*codes)
     try:
         while True:
-            #valid = 2
-            valid = random.randrange(3)
+            valid = valids()
             pcs.pma_data_rx_valid.value = valid
             if valid == 0:
                 data = 'XX'
@@ -254,8 +275,8 @@ async def test_tx(pcs):
     await cocotb.start(mii_send_packet(pcs, [0x5, None]))
     assert [0x5, 0x5, None] == await alist(pcs_recv_packet(pcs))
 
-@cocotb.test(timeout_time=10, timeout_unit='us')
-async def test_rx(pcs):
+@timeout(10, 'us')
+async def test_rx(pcs, valids):
     pcs.pma_data_rx.value = LogicArray('11')
     pcs.pma_data_rx_valid.value = 2
     pcs.link_status.value = 1
@@ -276,7 +297,7 @@ async def test_rx(pcs):
         (Code('J'), Code('K'), Code('I'), Code('I'), (1,1)),
         # Packet spacing
         *((*frame([0x55, 0x55]), (1,) * i) for i in range(10))
-    )))
+    ), valids))
 
     assert packet == await alist(mii_recv_packet(pcs))
 
@@ -291,3 +312,7 @@ async def test_rx(pcs):
     # Test packet spacing
     for _ in range(10):
         assert [0x5, 0x5] == await alist(mii_recv_packet(pcs))
+
+rx_tests = TestFactory(test_rx)
+rx_tests.add_option('valids', (one_valid, two_valid, rand_valid, saw_valid()))
+rx_tests.generate_tests()

@@ -1,6 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-Only
 # Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
 
+import functools
+
+import cocotb
+from cocotb.triggers import with_timeout
+from cocotb.result import SimTimeoutError
+
 async def alist(xs):
     return [x async for x in xs]
 
@@ -8,6 +14,24 @@ async def alist(xs):
 class classproperty(property):
     def __get__(self, cls, owner):
         return classmethod(self.fget).__get__(None, owner)()
+
+class timeout:
+    def __init__(self, time, unit):
+        self.time = time
+        self.unit = unit
+
+    def __call__(self, f):
+        coro = cocotb.coroutine(f)
+
+        @functools.wraps(f)
+        async def wrapped(*args, **kwargs):
+            r = coro(*args, **kwargs)
+            try:
+                return await with_timeout(r, self.time, self.unit)
+            except SimTimeoutError:
+                r.kill()
+                raise
+        return wrapped
 
 class ReverseList(list):
     def __init__(self, iterable=None):

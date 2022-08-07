@@ -4,13 +4,30 @@ from statistics import NormalDist
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
+from cocotb.regression import TestFactory
 from cocotb.triggers import RisingEdge, Timer
+
+from .util import timeout
 
 def print_list_at(l, i):
     print(' ' * max(50 - i, 0), *l[max(i - 50, 0):i+50], sep='')
 
-@cocotb.test(timeout_time=100, timeout_unit='us')
-async def test_rx(pmd):
+BITS = 1000
+
+def random_delays(count):
+    # Target BER is 1e9 and the maximum jitter is 1.4ns
+    # This is just random jitter (not DDJ or DCJ) but it'll do
+    delay_dist = NormalDist(8000, 1400 / NormalDist().inv_cdf(1-2e-9))
+    return (int(delay) for delay in delay_dist.samples(count))
+
+def mindelays(count):
+    return (7900,) * count
+
+def maxdelays(count):
+    return (8100,) * count
+
+@timeout(100, 'us')
+async def test_rx(pmd, delays):
     pmd.signal_detect.value = 0
     await Timer(1)
     await cocotb.start(Clock(pmd.rx_clk_125, 8, units='ns').start())
@@ -18,22 +35,18 @@ async def test_rx(pmd):
     await Timer(random.randrange(0, 8000), units='ps')
     await cocotb.start(Clock(pmd.rx_clk_250, 4, units='ns').start())
 
-    ins = [random.randrange(2) for _ in range(1000)]
+    ins = [random.randrange(2) for _ in range(BITS)]
     async def generate_bits():
         # random phase
         await Timer(random.randrange(0, 8000), units='ps')
         pmd.signal_detect.value = 1
-        # Target BER is 1e9 and the maximum jitter is 1.4ns
-        # This is just random jitter (not DDJ or DCJ) but it'll do
-        delay_dist = NormalDist(8000, 1400 / NormalDist().inv_cdf(1-2e-9))
-        for i, delay in zip(ins, (int(delay) for delay in delay_dist.samples(len(ins)))):
+        for i, delay in zip(ins, delays(len(ins))):
             pmd.rx.value = i
             try:
                 pmd.delay.value = delay
             except AttributeError:
                 pass
             await Timer(delay, units='ps')
-            #await Timer(8100, units='ps')
         pmd.signal_detect.value = 0
     await cocotb.start(generate_bits())
 
@@ -69,3 +82,7 @@ async def test_rx(pmd):
     # There will be a few bits at the end not recorded because signal_detect
     # isn't delayed like the data signals
     assert best_corr > len(ins) - best_off - 10
+
+rx_tests = TestFactory(test_rx)
+rx_tests.add_option('delays', (random_delays, mindelays, maxdelays))
+rx_tests.generate_tests()
