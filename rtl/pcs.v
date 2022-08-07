@@ -395,9 +395,9 @@ module pcs_rx_bits (
 		end
 
 		/*
-		 * If we are flushing flush then activity is based on stale
-		 * data. Ignore it so we don't accidentally detect activity for
-		 * data we are going to flush anyway.
+		 * If we are flushing then activity is based on stale data.
+		 * Ignore it so we don't accidentally detect activity for data
+		 * we are going to flush anyway.
 		 */
 		if (flush)
 			activity_next = 0;
@@ -491,6 +491,11 @@ module pcs_rx (
 		endcase
 
 		start = 0;
+		/*
+		 * XXX: flush (unlike everything else here) is combinatorial;
+		 * we should only flush if we are actually evaluating the
+		 * state.
+		 */
 		flush = 0;
 		rx_next = rx;
 		ce_next = indicate;
@@ -560,7 +565,8 @@ end
 				;
 			`CODE_T:
 				if (aligned[4:0] == `CODE_R) begin
-					flush = 1;
+					if (indicate)
+						flush = 1;
 					state_next = IDLE;
 					valid_next = 0;
 				end else begin
