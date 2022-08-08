@@ -240,9 +240,6 @@ async def pcs_send_codes(pcs, codes, valids):
     except StopIteration:
         pass
 
-    pcs.pma_data_rx_valid.value = 1
-    pcs.pma_data_rx.value = LogicArray('1X')
-
 @cocotb.test(timeout_time=10, timeout_unit='us')
 async def test_tx(pcs):
     async def tx_ce():
