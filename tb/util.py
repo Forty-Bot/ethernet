@@ -2,10 +2,12 @@
 # Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
 
 import functools
+import random
 
 import cocotb
-from cocotb.triggers import with_timeout
 from cocotb.result import SimTimeoutError
+from cocotb.triggers import with_timeout, FallingEdge
+from cocotb.types import LogicArray
 
 async def alist(xs):
     return [x async for x in xs]
@@ -65,3 +67,46 @@ class ReverseList(list):
 
     def __iter__(self):
         return super().__reversed__()
+
+def one_valid():
+    return 1
+
+def two_valid():
+    return 2
+
+def rand_valid():
+    return random.randrange(3)
+
+class saw_valid:
+    def __init__(self):
+        self.last = 0
+        # Lie for TestFactory
+        self.__qualname__ = self.__class__.__qualname__
+
+    def __call__(self):
+        self.last += 1
+        if self.last > 2:
+            self.last = 0
+        return self.last
+
+async def send_recovered_bits(clk, data, valid, bits, valids):
+    await FallingEdge(clk)
+    try:
+        while True:
+            v = valids()
+            valid.value = v
+            if v == 0:
+                d = 'XX'
+            elif v == 1:
+                d = (next(bits), 'X')
+            else:
+                first = next(bits)
+                try:
+                    second = next(bits)
+                except StopIteration:
+                    second = 'X'
+                d = (first, second)
+            data.value = LogicArray(d)
+            await FallingEdge(clk)
+    except StopIteration:
+        pass

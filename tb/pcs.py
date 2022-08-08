@@ -2,7 +2,6 @@
 # Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
 
 import enum
-import random
 import itertools
 
 import cocotb
@@ -11,7 +10,7 @@ from cocotb.regression import TestFactory
 from cocotb.triggers import ClockCycles, Edge, RisingEdge, FallingEdge, Timer
 from cocotb.types import LogicArray
 
-from .util import alist, classproperty, ReverseList, timeout
+from .util import *
 
 class Code(enum.Enum):
     _0 = (0b11110, '0')
@@ -195,49 +194,9 @@ async def pcs_recv_packet(pcs):
         yield code.data
     raise PrematureEndError()
 
-def one_valid():
-    return 1
-
-def two_valid():
-    return 2
-
-def rand_valid():
-    return random.randrange(3)
-
-class saw_valid:
-    def __init__(self):
-        self.last = 0
-        # Lie for TestFactory
-        self.__qualname__ = self.__class__.__qualname__
-
-    def __call__(self):
-        self.last += 1
-        if self.last > 2:
-            self.last = 0
-        return self.last
-
 async def pcs_send_codes(pcs, codes, valids):
-    await FallingEdge(pcs.rx_clk)
-    bits = itertools.chain(*codes)
-    try:
-        while True:
-            valid = valids()
-            pcs.pma_data_rx_valid.value = valid
-            if valid == 0:
-                data = 'XX'
-            elif valid == 1:
-                data = (next(bits), 'X')
-            else:
-                first = next(bits)
-                try:
-                    second = next(bits)
-                except StopIteration:
-                    second = 'X'
-                data = (first, second)
-            pcs.pma_data_rx.value = LogicArray(data)
-            await FallingEdge(pcs.rx_clk)
-    except StopIteration:
-        pass
+    await send_recovered_bits(pcs.rx_clk, pcs.pma_data_rx, pcs.pma_data_rx_valid,
+                              itertools.chain(*codes), valids)
 
 @cocotb.test(timeout_time=10, timeout_unit='us')
 async def test_tx(pcs):
