@@ -218,7 +218,6 @@ class saw_valid:
 
 async def pcs_send_codes(pcs, codes, valids):
     await FallingEdge(pcs.rx_clk)
-    codes = list(codes)
     bits = itertools.chain(*codes)
     try:
         while True:
