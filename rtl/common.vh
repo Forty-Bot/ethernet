@@ -6,6 +6,9 @@
 `ifndef COMMON_VH
 `define COMMON_VH
 
+`default_nettype none
+`timescale 1ns/1ns
+
 `ifdef SYNTHESIS
 `define DUMP(levels)
 `else

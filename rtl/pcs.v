@@ -3,8 +3,6 @@
  * Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
  */
 
-`default_nettype none
-
 `include "common.vh"
 
 /* 4b5b code groups */

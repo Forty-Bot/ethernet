@@ -17,10 +17,11 @@ FORCE:
 	$(SYNTH) -q -E $@.d -p "synth_ice40 -top $(*F)" -b json -o $@ -f verilog $<
 
 %.post.v: %.json %.v
-	( grep timescale $*.v && echo '`include "common.vh"' && \
+	( echo '`include "common.vh"'; grep timescale $*.v; \
 	  $(SYNTH) -q -b verilog -f json $< ) | sed 's/endmodule/`DUMP(1)\n\0/g' > $@
 
-IFLAGS := -g2012 -Wall
+# Don't warn about including the timescale from common.vh
+IFLAGS := -g2012 -Wall -Wno-timescale
 
 define run-icarus =
 $(ICARUS) $(IFLAGS) -I$(<D) -M$@.pre -s $(TOP) -o $@ $< $(EXTRA_V) && \
