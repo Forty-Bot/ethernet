@@ -4,6 +4,7 @@
 *.d
 *.json
 *.asc
+*.post.v
 
 # test artifacts
 __pycache__
