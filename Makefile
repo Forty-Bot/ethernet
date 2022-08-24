@@ -63,8 +63,10 @@ endef
 %.post.fst: rtl/%.post.vvp tb/%.py FORCE
 	$(run-vvp)
 
+MODULES := pcs pmd
+
 .PHONY: test
-test: $(addsuffix .fst,pcs pmd) $(addsuffix .post.fst,pcs pmd)
+test: $(addsuffix .fst,$(MODULES)) $(addsuffix .post.fst,$(MODULES))
 
 .PHONY: clean
 clean:
