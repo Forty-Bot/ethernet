@@ -90,11 +90,11 @@ class saw_valid:
         return self.last
 
 async def send_recovered_bits(clk, data, valid, bits, valids):
+    bits = iter(bits)
     await FallingEdge(clk)
     try:
         while True:
             v = valids()
-            valid.value = v
             if v == 0:
                 d = 'XX'
             elif v == 1:
@@ -105,8 +105,10 @@ async def send_recovered_bits(clk, data, valid, bits, valids):
                     second = next(bits)
                 except StopIteration:
                     second = 'X'
+                    v = 1
                 d = (first, second)
             data.value = LogicArray(d)
+            valid.value = v
             await FallingEdge(clk)
     except StopIteration:
         pass
