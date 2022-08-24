@@ -110,3 +110,15 @@ async def send_recovered_bits(clk, data, valid, bits, valids):
             await FallingEdge(clk)
     except StopIteration:
         pass
+
+def print_list_at(l, i):
+    print(' ' * max(50 - i, 0), *l[max(i - 50, 0):i+50], sep='')
+
+def compare_lists(ins, outs):
+    assert outs
+    for idx, (i, o) in enumerate(zip(ins, outs)):
+        if i != o:
+            print(idx)
+            print_list_at(ins, idx)
+            print_list_at(outs, idx)
+            assert False, "Differring bit"

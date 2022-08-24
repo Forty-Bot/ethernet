@@ -10,10 +10,7 @@ from cocotb.clock import Clock
 from cocotb.regression import TestFactory
 from cocotb.triggers import RisingEdge, Timer
 
-from .util import timeout
-
-def print_list_at(l, i):
-    print(' ' * max(50 - i, 0), *l[max(i - 50, 0):i+50], sep='')
+from .util import compare_lists, print_list_at, timeout
 
 BITS = 1000
 
@@ -76,14 +73,10 @@ async def test_rx(pmd, delays):
             best_off = off
 
     print(f"best offset is {best_off} correlation {best_corr/(len(ins) - best_off)}")
-    for idx, (i, o) in enumerate(zip(ins[best_off:], outs)):
-        if i != o:
-            print(idx)
-            print_list_at(ins, idx + best_off)
-            print_list_at(outs, idx)
-            assert False
+    compare_lists(ins[best_off:], outs)
     # There will be a few bits at the end not recorded because signal_detect
     # isn't delayed like the data signals
+    print(best_corr, len(ins), best_off)
     assert best_corr > len(ins) - best_off - 10
 
 rx_tests = TestFactory(test_rx)
