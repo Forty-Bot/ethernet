@@ -48,6 +48,11 @@ export LIBPYTHON_LOC := $(shell cocotb-config --libpython)
 VVPFLAGS := -M $(shell cocotb-config --lib-dir)
 VVPFLAGS += -m $(shell cocotb-config --lib-name vpi icarus)
 
+# Always use color output if we have a tty. This allows for easy use of -O
+ifeq ($(shell test -c /dev/stdin && echo 1),1)
+export COCOTB_ANSI_OUTPUT=1
+endif
+
 define run-vvp =
 MODULE=tb.$* $(VVP) $(VVPFLAGS) $< -fst +vcd=$@
 endef
