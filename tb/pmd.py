@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-Only
+# Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
+
 import random
 from statistics import NormalDist
 
