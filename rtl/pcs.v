@@ -166,6 +166,7 @@ module pcs_tx (
 			code_next = `CODE_I;
 			state_next = IDLE;
 			if (enable) begin
+				tx_next = 1;
 				if (err)
 					state_next = ERROR_J;
 				else
@@ -173,7 +174,6 @@ module pcs_tx (
 			end
 		end
 		START_J: begin
-			tx_next = 1;
 			code_next = `CODE_J;
 			if (err)
 				state_next = ERROR_K;
@@ -184,7 +184,6 @@ module pcs_tx (
 			code_next = `CODE_K;
 		end
 		ERROR_J: begin
-			tx_next = 1;
 			code_next = `CODE_J;
 			state_next = ERROR_K;
 		end
