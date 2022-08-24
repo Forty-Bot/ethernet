@@ -10,7 +10,7 @@ from cocotb.regression import TestFactory
 from cocotb.triggers import ClockCycles, Edge, RisingEdge, FallingEdge, Timer
 from cocotb.types import LogicArray
 
-from .util import *
+from .util import alist, classproperty, ReverseList, send_recovered_bits, timeout, with_valids
 
 class Code(enum.Enum):
     _0 = (0b11110, '0')
