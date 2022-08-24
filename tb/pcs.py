@@ -268,6 +268,4 @@ async def test_rx(pcs, valids):
     for _ in range(10):
         assert [0x5, 0x5] == await alist(mii_recv_packet(pcs))
 
-rx_tests = TestFactory(test_rx)
-rx_tests.add_option('valids', (one_valid, two_valid, rand_valid, saw_valid()))
-rx_tests.generate_tests()
+with_valids(globals(), test_rx)

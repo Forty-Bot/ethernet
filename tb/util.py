@@ -89,6 +89,15 @@ class saw_valid:
             self.last = 0
         return self.last
 
+def with_valids(g, f):
+    for valids in (one_valid, two_valid, rand_valid, saw_valid()):
+        async def test(*args, valids=valids, **kwargs):
+            await f(*args, valids=valids, **kwargs)
+        test.__name__ = f"{f.__name__}_{valids.__qualname__}"
+        test.__qualname__ = f"{f.__qualname__}_{valids.__qualname__}"
+        test.valids = valids
+        g[test.__name__] = cocotb.test()(test)
+
 async def send_recovered_bits(clk, data, valid, bits, valids):
     bits = iter(bits)
     await FallingEdge(clk)
