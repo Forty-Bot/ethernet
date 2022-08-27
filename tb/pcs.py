@@ -10,7 +10,8 @@ from cocotb.regression import TestFactory
 from cocotb.triggers import ClockCycles, Edge, RisingEdge, FallingEdge, Timer
 from cocotb.types import LogicArray
 
-from .util import alist, classproperty, ReverseList, send_recovered_bits, timeout, with_valids
+from .util import alist, ClockEnable, classproperty, ReverseList, send_recovered_bits, \
+                  timeout, with_valids
 
 class Code(enum.Enum):
     _0 = (0b11110, '0')
@@ -200,19 +201,11 @@ async def pcs_send_codes(pcs, codes, valids):
 
 @cocotb.test(timeout_time=10, timeout_unit='us')
 async def test_tx(pcs):
-    async def tx_ce():
-        pcs.tx_ce.value = 1
-        while True:
-            await ClockCycles(pcs.tx_clk, 1, False)
-            pcs.tx_ce.value = 0
-            await ClockCycles(pcs.tx_clk, 4, False)
-            pcs.tx_ce.value = 1
-
     pcs.tx_en.value = 0
     pcs.tx_er.value = 0
     pcs.txd.value = LogicArray("XXXX")
     pcs.link_status.value = 1
-    await cocotb.start(tx_ce())
+    await cocotb.start(ClockEnable(pcs.tx_clk, pcs.tx_ce, 5))
     await Timer(1)
     await cocotb.start(Clock(pcs.tx_clk, 8, units='ns').start())
     await FallingEdge(pcs.tx_ce)

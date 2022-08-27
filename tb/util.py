@@ -6,7 +6,7 @@ import random
 
 import cocotb
 from cocotb.result import SimTimeoutError
-from cocotb.triggers import with_timeout, FallingEdge
+from cocotb.triggers import ClockCycles, FallingEdge, with_timeout
 from cocotb.types import LogicArray
 
 async def alist(xs):
@@ -133,3 +133,11 @@ def compare_lists(ins, outs):
             print_list_at(ins, idx)
             print_list_at(outs, idx)
             assert False, "Differring bit"
+
+async def ClockEnable(clk, ce, ratio):
+    ce.value = 1
+    while True:
+        await ClockCycles(clk, 1, False)
+        ce.value = 0
+        await ClockCycles(clk, ratio - 1, False)
+        ce.value = 1
