@@ -13,7 +13,7 @@
 
 `timescale 1ns/1ps
 
-module pmd (
+module pmd_io (
 	input tx_clk,
 	input rx_clk_250,
 	input rx_clk_125,
