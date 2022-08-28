@@ -80,7 +80,7 @@ async def test_descramble(descrambler, valids):
 
     best_corr = -1
     best_off = None
-    for off in range(30, 42):
+    for off in range(28, 42):
         corr = sum(i == o for i, o in zip(ins[off:], outs))
         if corr > best_corr:
             best_corr = corr
