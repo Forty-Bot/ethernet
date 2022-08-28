@@ -63,7 +63,7 @@ endef
 %.post.fst: rtl/%.post.vvp tb/%.py FORCE
 	$(run-vvp)
 
-MODULES := pcs pmd nrzi_encode nrzi_decode scramble descramble mdio mdio_io mii_io_rx
+MODULES := pcs pmd nrzi_encode nrzi_decode scramble descramble mdio mdio_io mii_io_rx mii_io_tx
 
 .PHONY: test
 test: $(addsuffix .fst,$(MODULES)) $(addsuffix .post.fst,$(MODULES))
