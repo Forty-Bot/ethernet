@@ -112,10 +112,8 @@ module pmd (
 	localparam C = 2;
 	localparam D = 3;
 
-	reg [1:0] state, state_next;
-	initial state = A;
-	reg valid, valid_next;
-	initial valid = 0;
+	reg [1:0] state = A, state_next;
+	reg valid = 0, valid_next;
 	reg [1:0] pmd_data_rx_next, pmd_data_rx_valid_next;
 	reg [3:0] rx_r, rx_f;
 
