@@ -101,10 +101,10 @@ module pmd (
 	 * that, we need two cycles of history to detect edges.
 	 */
 	always @(posedge rx_clk_125) begin
-		rx_a[2:1] = rx_a[1:0];
-		rx_b[2:1] = rx_b[1:0];
-		rx_c[2:1] = rx_c[1:0];
-		rx_d[2:1] = rx_d[1:0];
+		rx_a[2:1] <= rx_a[1:0];
+		rx_b[2:1] <= rx_b[1:0];
+		rx_c[2:1] <= rx_c[1:0];
+		rx_d[2:1] <= rx_d[1:0];
 	end
 
 	localparam A = 0;
