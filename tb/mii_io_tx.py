@@ -12,6 +12,7 @@ from .util import ClockEnable
 
 @cocotb.test(timeout_time=500, timeout_unit='ns')
 async def test_io(io):
+    io.isolate.value = 0
     io.tx_en.value = LogicArray('X')
     io.tx_er.value = LogicArray('X')
     io.txd.value = LogicArray('X' * 4)
@@ -49,3 +50,10 @@ async def test_io(io):
     await recv_datum(0, 1, 3)
     await recv_datum(1, 0, 4)
     await recv_datum(0, 1, 5)
+
+    io.isolate.value = 1
+    io.tx_en.value = 1
+    await RisingEdge(io.clk)
+    assert io.tx_clk.value.binstr == 'z'
+    await RisingEdge(io.ce)
+    assert not io.enable.value

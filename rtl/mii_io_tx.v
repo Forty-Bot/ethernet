@@ -7,8 +7,10 @@
 `include "io.vh"
 
 module mii_io_tx (
-	/* On-chip */
 	input clk,
+	input isolate,
+
+	/* On-chip */
 	output reg ce,
 	output reg enable,
 	output reg err,
@@ -21,7 +23,7 @@ module mii_io_tx (
 	input [3:0] txd
 );
 
-	reg ce_next;
+	reg ce_next, raw_enable;
 	reg tx_clk_p_next, tx_clk_n, tx_clk_n_next;
 	reg [2:0] counter, counter_next;
 	/* I have no idea why we need to use initial... */
@@ -44,6 +46,8 @@ module mii_io_tx (
 			counter_next = 4;
 		end
 		endcase
+
+		enable = raw_enable && !isolate;
 	end
 
 	always @(posedge clk) begin
@@ -54,10 +58,11 @@ module mii_io_tx (
 
 `ifdef SYNTHESIS
 	SB_IO #(
-		.PIN_TYPE(`PIN_OUTPUT_ALWAYS | `PIN_OUTPUT_DDR)
+		.PIN_TYPE(`PIN_OUTPUT_ENABLE | `PIN_OUTPUT_DDR)
 	) tx_clk_pin (
 		.PACKAGE_PIN(tx_clk),
 		.OUTPUT_CLK(clk),
+		.OUTPUT_ENABLE(!isolate),
 		.D_OUT_0(tx_clk_p_next),
 		.D_OUT_1(tx_clk_n)
 	);
@@ -68,7 +73,7 @@ module mii_io_tx (
 		.PACKAGE_PIN(tx_en),
 		.CLOCK_ENABLE(ce_next),
 		.INPUT_CLK(clk),
-		.D_IN_0(enable)
+		.D_IN_0(raw_enable)
 	);
 
 	SB_IO #(
@@ -94,16 +99,19 @@ module mii_io_tx (
 	endgenerate
 `else
 	always @(posedge clk) begin
-		tx_clk <= tx_clk_p_next;
 		if (ce_next) begin
-			enable <= tx_en;
+			raw_enable <= tx_en;
 			err <= tx_er;
 			data <= txd;
 		end
 	end
 
-	always @(negedge clk)
-		tx_clk <= tx_clk_n;
+	always @(posedge clk, negedge clk) begin
+		if (isolate)
+			tx_clk <= 1'bz;
+		else
+			tx_clk <= clk ? tx_clk_p_next : tx_clk_n;
+	end
 `endif
 
 	`DUMP(0)

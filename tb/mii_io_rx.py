@@ -12,10 +12,11 @@ from .util import ClockEnable
 
 @cocotb.test(timeout_time=500, timeout_unit='ns')
 async def test_io(io):
+    io.isolate.value = 0
+    io.ce.value = 0
     io.valid.value = LogicArray('X')
     io.err.value = LogicArray('X')
     io.data.value = LogicArray('X' * 4)
-    io.ce.value = 0
     await Timer(1)
     await cocotb.start(Clock(io.clk, 8, units='ns').start())
     await ClockCycles(io.clk, 1)
@@ -78,3 +79,10 @@ async def test_io(io):
     await recv_datum(0, 1, 8)
     await recv_datum(1, 0, 9)
     await recv_datum(0, 1, 10)
+
+    io.isolate.value = 1
+    await FallingEdge(io.clk)
+    assert io.rx_clk.value.binstr == 'z'
+    assert io.rx_dv.value.binstr == 'z'
+    assert io.rx_er.value.binstr == 'z'
+    assert io.rxd.value.binstr == 'zzzz'
