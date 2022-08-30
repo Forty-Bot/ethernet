@@ -64,6 +64,7 @@ endef
 	$(run-vvp)
 
 MODULES := pcs pmd_io nrzi_encode nrzi_decode scramble descramble mdio mdio_io mii_io_rx mii_io_tx
+MODULES += mdio_regs
 
 .PHONY: test
 test: $(addsuffix .fst,$(MODULES)) $(addsuffix .post.fst,$(MODULES))
