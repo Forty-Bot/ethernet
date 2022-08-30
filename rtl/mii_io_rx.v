@@ -26,9 +26,9 @@ module mii_io_rx (
 	reg rx_clk_p_next, rx_clk_n, rx_clk_n_next;
 	reg [1:0] state = HIGH, state_next;
 
-	parameter LOW		= 2;
-	parameter RISING	= 1;
-	parameter HIGH		= 0;
+	localparam LOW		= 2;
+	localparam RISING	= 1;
+	localparam HIGH		= 0;
 
 	always @(*) begin
 		rx_clk_p_next = 0;
