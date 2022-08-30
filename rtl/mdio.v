@@ -12,7 +12,7 @@ module mdio (
 	output reg mdo,
 	output reg mdo_valid,
 
-	input ack,
+	input ack, err,
 	output cyc,
 	output reg stb, we,
 	output reg [4:0] addr,
@@ -47,7 +47,7 @@ module mdio (
 	reg [4:0] addr_next;
 	reg [15:0] data_next;
 
-	reg bad, bad_next;
+	reg bad, bad_next, saved_err, saved_err_next;
 	reg [2:0] state = IDLE, state_next;
 	reg [4:0] state_counter, state_counter_next;
 
@@ -67,9 +67,13 @@ module mdio (
 		we_next = we;
 		addr_next = addr;
 		data_next = data_write;
-		if (stb && ack) begin
+		saved_err_next = saved_err;
+		if (stb && (ack || err)) begin
 			stb_next = 0;
-			data_next = data_read;
+			if (err)
+				saved_err_next = 1;
+			else
+				data_next = data_read;
 		end
 
 		state_next = state;
@@ -102,6 +106,9 @@ module mdio (
 		OP: begin
 			/* This is a bit of an abuse of we :) */
 			we_next = mdi;
+			/* Accordingly, cancel any outstanding transactions */
+			stb_next = 0;
+			saved_err_next = 0;
 			if (!state_counter) begin
 				case ({ we, mdi })
 				OP_READ: we_next = 0;
@@ -118,9 +125,6 @@ module mdio (
 				bad_next = 1;
 
 			if (!state_counter) begin
-				/* Cancel any outstanding transaction */
-				if (ce)
-					stb_next = 0;
 				state_next = REGAD;
 				state_counter_next = REGAD_BITS - 1;
 			end
@@ -141,9 +145,10 @@ module mdio (
 				if (!we && !bad) begin
 					mdo_next = 0;
 					mdo_valid_next = 1;
-					if (stb) begin
+					if (stb || saved_err) begin
 						/* No response */
-						stb_next = !ce;
+						if (ce)
+							stb_next = 0;
 						bad_next = 1;
 						mdo_valid_next = 0;
 					end
@@ -178,6 +183,7 @@ module mdio (
 	always @(posedge clk) begin
 		stb <= stb_next;
 		data_write <= data_next;
+		saved_err <= saved_err_next;
 		if (ce) begin
 			mdo <= mdo_next;
 			mdo_valid <= mdo_valid_next;

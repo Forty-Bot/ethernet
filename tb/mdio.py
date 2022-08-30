@@ -108,6 +108,7 @@ async def wb_write(mdio, addr, data):
 async def setup(mdio):
     mdio.mdi.value = 0
     mdio.ack.value = 0
+    mdio.err.value = 0
     mdio.data_read.value = LogicArray('X' * 16)
     await cocotb.start(ClockEnable(mdio.clk, mdio.ce, MDIO_RATIO))
     await Timer(1)
@@ -160,10 +161,21 @@ async def test_badmdio(mdio):
 async def test_badwb(mdio):
     await setup(mdio)
 
-    async def try_mdio():
+    async def bad_resp():
+        # No ack
+        await ClockCycles(mdio.stb, 2, False)
+        # Error response
+        for _ in range(2):
+            while not (mdio.cyc.value and mdio.stb.value):
+                await FallingEdge(mdio.clk)
+
+            mdio.err.value = 1
+            await RisingEdge(mdio.clk)
+            mdio.err.value = 0
+            await FallingEdge(mdio.clk)
+            assert not mdio.stb.value
+    await cocotb.start(bad_resp())
+
+    for _ in range(2):
         assert await mdio_read(mdio, 0, 0) is None
         await mdio_write(mdio, 0, 0, 0)
-        assert await mdio_read(mdio, 0, 0) is None
-    await cocotb.start(try_mdio())
-    
-    await ClockCycles(mdio.stb, 3, False)
