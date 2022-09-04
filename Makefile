@@ -13,10 +13,10 @@ all: rtl/pcs.asc
 .PHONY: FORCE
 FORCE:
 
-%.json: %.v
+%.synth.json: %.v
 	$(SYNTH) -q -E $@.d -p "synth_ice40 -top $(*F)" -b json -o $@ -f verilog $<
 
-%.post.v: %.json %.v
+%.synth.v: %.synth.json %.v
 	( echo '`include "common.vh"'; grep timescale $*.v; \
 	  $(SYNTH) -q -b verilog -f json $< ) | sed 's/endmodule/`DUMP(1)\n\0/g' > $@
 
@@ -32,14 +32,14 @@ endef
 %.vvp: %.v
 	$(run-icarus)
 
-%.post.vvp: TOP = $(*F)
-%.post.vvp: EXTRA_V := $(shell $(SYNTH)-config --datdir)/ice40/cells_sim.v
+%.synth.vvp: TOP = $(*F)
+%.synth.vvp: EXTRA_V := $(shell $(SYNTH)-config --datdir)/ice40/cells_sim.v
 # Don't warn about unused SB_IO ports
-%.post.vvp: IFLAGS += -Wno-portbind
-%.post.vvp: %.post.v
+%.synth.vvp: IFLAGS += -Wno-portbind
+%.synth.vvp: %.synth.v
 	$(run-icarus)
 
-%.asc: %.json
+%.asc: %.synth.json
 	$(PNR) --pcf-allow-unconstrained --freq 125 --hx8k --package ct256 --json $< --asc $@
 
 -include $(wildcard rtl/*.d)
@@ -60,16 +60,16 @@ endef
 %.fst: rtl/%.vvp tb/%.py FORCE
 	$(run-vvp)
 
-%.post.fst: rtl/%.post.vvp tb/%.py FORCE
+%.synth.fst: rtl/%.synth.vvp tb/%.py FORCE
 	$(run-vvp)
 
 MODULES := pcs pmd_io nrzi_encode nrzi_decode scramble descramble mdio mdio_io mii_io_rx mii_io_tx
 MODULES += mdio_regs
 
 .PHONY: test
-test: $(addsuffix .fst,$(MODULES)) $(addsuffix .post.fst,$(MODULES))
+test: $(addsuffix .fst,$(MODULES)) $(addsuffix .synth.fst,$(MODULES))
 
 .PHONY: clean
 clean:
 	rm *.fst
-	cd rtl && rm -f *.json *.asc *.pre *.vvp *.d *.post.v
+	cd rtl && rm -f *.json *.asc *.pre *.vvp *.d *.synth.v
