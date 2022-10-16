@@ -10,7 +10,6 @@ from cocotb.types import LogicArray
 
 @cocotb.test(timeout_time=50, timeout_unit='us')
 async def test_io(io):
-    io.mdio.value = LogicArray('X')
     io.mdc.value = 0
     io.mdo_valid.value = 0
     await Timer(1)
