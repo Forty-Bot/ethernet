@@ -13,7 +13,8 @@ module descramble (
 	output reg [1:0] unscrambled, unscrambled_valid
 );
 
-	reg locked_next;
+	reg relock, relock_next, locked_next;
+	initial relock = 0;
 	reg [1:0] ldd, unscrambled_next;
 	reg [10:0] lfsr, lfsr_next;
 
@@ -73,15 +74,20 @@ module descramble (
 				idle_counter_next = CONSECUTIVE_IDLES;
 		end
 
-		locked_next = 1;
-		unlock_counter_next = unlock_counter;
+		relock_next = 0;
 		if (!idle_counter_next[4:1]) begin
-			unlock_counter_next = test_mode ? TEST_UNLOCK_TIME : UNLOCK_TIME;
 			/*
 			 * Reset the counter to 2 to ensure we can always
 			 * subtract idles without underflowing
 			 */
 			idle_counter_next = 2;
+			relock_next = 1;
+		end
+
+		locked_next = 1;
+		unlock_counter_next = unlock_counter;
+		if (relock) begin
+			unlock_counter_next = test_mode ? TEST_UNLOCK_TIME : UNLOCK_TIME;
 		end else if (|unlock_counter) begin
 			unlock_counter_next = unlock_counter - 1;
 		end else begin
@@ -94,12 +100,14 @@ module descramble (
 		if (signal_status) begin
 			lfsr <= lfsr_next;
 			idle_counter <= idle_counter_next;
+			relock <= relock_next;
 			unlock_counter <= unlock_counter_next;
 			locked <= locked_next;
 			unscrambled_valid <= scrambled_valid;
 		end else begin
 			lfsr <= 0;
 			idle_counter <= CONSECUTIVE_IDLES;
+			relock <= 0;
 			unlock_counter <= 0;
 			locked <= 0;
 			unscrambled_valid <= 0;
