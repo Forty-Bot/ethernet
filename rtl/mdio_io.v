@@ -71,7 +71,6 @@ module mdio_io (
 		mdi <= mdi_next;
 		last_mdc[1] <= last_mdc[0];
 		ce <= ce_next;
-		mdio_oe <= mdo_valid;
 		if (mdo_valid)
 			oe <= { oe[1:0], mdo_valid };
 		else
