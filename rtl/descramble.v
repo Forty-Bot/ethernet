@@ -10,12 +10,12 @@ module descramble (
 	input [1:0] scrambled, scrambled_valid,
 	input signal_status, test_mode,
 	output reg locked,
-	output reg [1:0] unscrambled, unscrambled_valid
+	output reg [1:0] descrambled, descrambled_valid
 );
 
 	reg relock, relock_next, locked_next;
 	initial relock = 0;
-	reg [1:0] ldd, unscrambled_next;
+	reg [1:0] ldd, descrambled_next;
 	reg [10:0] lfsr, lfsr_next;
 
 	/*
@@ -45,7 +45,7 @@ module descramble (
 
 	always @(*) begin
 		ldd = { lfsr[8] ^ lfsr[10], lfsr[7] ^ lfsr[9] };
-		unscrambled_next = scrambled ^ ldd;
+		descrambled_next = scrambled ^ ldd;
 
 		/*
 		 * We must invert scrambled before adding it to the lfsr in
@@ -62,14 +62,14 @@ module descramble (
 
 		idle_counter_next = idle_counter;
 		if (scrambled_valid[1]) begin
-			if (unscrambled_next[1] && unscrambled_next[0])
+			if (descrambled_next[1] && descrambled_next[0])
 				idle_counter_next = idle_counter - 2;
-			else if (unscrambled_next[0])
+			else if (descrambled_next[0])
 				idle_counter_next = idle_counter - 1;
 			else
 				idle_counter_next = CONSECUTIVE_IDLES;
 		end else if (scrambled_valid[0]) begin
-			if (unscrambled_next[1])
+			if (descrambled_next[1])
 				idle_counter_next = idle_counter - 1;
 			else
 				idle_counter_next = CONSECUTIVE_IDLES;
@@ -97,21 +97,21 @@ module descramble (
 	end
 
 	always @(posedge clk) begin
-		unscrambled <= unscrambled_next;
+		descrambled <= descrambled_next;
 		if (signal_status) begin
 			lfsr <= lfsr_next;
 			idle_counter <= idle_counter_next;
 			relock <= relock_next;
 			unlock_counter <= unlock_counter_next;
 			locked <= locked_next;
-			unscrambled_valid <= scrambled_valid;
+			descrambled_valid <= scrambled_valid;
 		end else begin
 			lfsr <= 0;
 			idle_counter <= CONSECUTIVE_IDLES;
 			relock <= 0;
 			unlock_counter <= 0;
 			locked <= 0;
-			unscrambled_valid <= 0;
+			descrambled_valid <= 0;
 		end
 	end
 

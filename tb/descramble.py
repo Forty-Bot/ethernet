@@ -69,14 +69,14 @@ async def test_descramble(descrambler, valids):
     await RisingEdge(descrambler.locked)
     while descrambler.locked.value:
         await RisingEdge(descrambler.clk)
-        valid = descrambler.unscrambled_valid.value
+        valid = descrambler.descrambled_valid.value
         if valid == 0:
             pass
         elif valid == 1:
-            outs.append(descrambler.unscrambled[1].value)
+            outs.append(descrambler.descrambled[1].value)
         else:
-            outs.append(descrambler.unscrambled[1].value)
-            outs.append(descrambler.unscrambled[0].value)
+            outs.append(descrambler.descrambled[1].value)
+            outs.append(descrambler.descrambled[0].value)
 
     best_corr = -1
     best_off = None
