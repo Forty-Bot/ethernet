@@ -161,7 +161,7 @@ async def pcs_recv_packet(pcs):
 
     async def read_bit():
         await RisingEdge(pcs.tx_clk)
-        rx_bits.append(pcs.pma_data_tx.value)
+        rx_bits.append(pcs.pma_tx_data.value)
 
     async def read_code():
         for _ in range(5):
@@ -196,7 +196,7 @@ async def pcs_recv_packet(pcs):
     raise PrematureEndError()
 
 async def pcs_send_codes(pcs, codes, valids):
-    await send_recovered_bits(pcs.rx_clk, pcs.pma_data_rx, pcs.pma_data_rx_valid,
+    await send_recovered_bits(pcs.rx_clk, pcs.pma_rx_data, pcs.pma_rx_data_valid,
                               itertools.chain(*codes), valids)
 
 @cocotb.test(timeout_time=10, timeout_unit='us')
@@ -225,8 +225,8 @@ async def test_tx(pcs):
 
 @timeout(10, 'us')
 async def test_rx(pcs, valids):
-    pcs.pma_data_rx.value = LogicArray('11')
-    pcs.pma_data_rx_valid.value = 2
+    pcs.pma_rx_data.value = LogicArray('11')
+    pcs.pma_rx_data_valid.value = 2
     pcs.link_status.value = 1
     await Timer(1)
     await cocotb.start(Clock(pcs.rx_clk, 8, units='ns').start())

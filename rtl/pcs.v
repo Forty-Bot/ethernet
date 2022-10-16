@@ -52,9 +52,9 @@ module pcs (
 	output col,
 
 	/* PMA */
-	output pma_data_tx,
-	input [1:0] pma_data_rx,
-	input [1:0] pma_data_rx_valid,
+	output pma_tx_data,
+	input [1:0] pma_rx_data,
+	input [1:0] pma_rx_data_valid,
 	input link_status
 );
 
@@ -66,7 +66,7 @@ module pcs (
 		.enable(tx_en),
 		.data(txd),
 		.err(tx_er),
-		.bits(pma_data_tx),
+		.bits(pma_tx_data),
 		.link_status(link_status),
 		.tx(transmitting)
 	);
@@ -77,8 +77,8 @@ module pcs (
 		.valid(rx_dv),
 		.data(rxd),
 		.err(rx_er),
-		.bits(pma_data_rx),
-		.bits_valid(pma_data_rx_valid),
+		.bits(pma_rx_data),
+		.bits_valid(pma_rx_data_valid),
 		.link_status(link_status),
 		.rx(receiving)
 	);
