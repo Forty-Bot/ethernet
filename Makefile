@@ -16,12 +16,20 @@ FORCE:
 %.synth.json: %.v
 	$(SYNTH) -q -E $@.d -p "synth_ice40 -top $(*F)" -b json -o $@ -f verilog $<
 
-%.synth.v: %.synth.json %.v
+define run-jsontov =
 	( echo '`include "common.vh"'; grep timescale $*.v; \
-	  $(SYNTH) -q -b verilog -f json $< ) | sed 's/endmodule/`DUMP(1)\n\0/g' > $@
+	  $(SYNTH) -q -p "write_verilog -defparam -noattr" -f json $< ) | \
+	  sed 's/endmodule/`DUMP(1)\n\0/g' > $@
+endef
+
+%.synth.v: %.synth.json %.v
+	$(run-jsontov)
+
+%.place.v: %.place.json %.v
+	$(run-jsontov)
 
 # Don't warn about including the timescale from common.vh
-IFLAGS := -g2012 -Wall -Wno-timescale
+IFLAGS := -g2012 -gspecify -Wall -Wno-timescale
 
 define run-icarus =
 $(ICARUS) $(IFLAGS) -I$(<D) -M$@.pre -s $(TOP) -o $@ $< $(EXTRA_V) && \
@@ -33,20 +41,29 @@ endef
 	$(run-icarus)
 
 %.synth.vvp: TOP = $(*F)
-%.synth.vvp: EXTRA_V := $(shell $(SYNTH)-config --datdir)/ice40/cells_sim.v
+%.synth.vvp %.place.vvp: EXTRA_V := $(shell $(SYNTH)-config --datdir)/ice40/cells_sim.v
 # Don't warn about unused SB_IO ports
 %.synth.vvp: IFLAGS += -Wno-portbind
 %.synth.vvp: %.synth.v
 	$(run-icarus)
 
-%.asc: %.synth.json
-	$(PNR) --pcf-allow-unconstrained --freq 125 --hx8k --package ct256 --json $< --asc $@
+%.place.vvp: TOP = top
+# Don't warn about unused SB_IO ports
+%.place.vvp: IFLAGS += -Wno-portbind
+%.place.vvp: IFLAGS += -DTIMING -Ttyp
+%.place.vvp: %.place.v
+	$(run-icarus)
+
+%.asc %.sdf %.place.json &: %.synth.json | log
+	$(PNR) -q --pcf-allow-unconstrained --freq 125 --hx8k --package ct256 --json $< \
+		--write $*.place.json --sdf $*.sdf --asc $*.asc --log log/$(*F).place
 
 -include $(wildcard rtl/*.d)
 
 export LIBPYTHON_LOC := $(shell cocotb-config --libpython)
 VVPFLAGS := -M $(shell cocotb-config --lib-dir)
 VVPFLAGS += -m $(shell cocotb-config --lib-name vpi icarus)
+PLUSARGS = -fst +vcd=$@
 
 # Always use color output if we have a tty. This allows for easy use of -O
 ifeq ($(shell test -c /dev/stdin && echo 1),1)
@@ -54,7 +71,7 @@ export COCOTB_ANSI_OUTPUT=1
 endif
 
 define run-vvp =
-MODULE=tb.$* $(VVP) $(VVPFLAGS) $< -fst +vcd=$@
+MODULE=tb.$* $(VVP) $(VVPFLAGS) $< $(PLUSARGS)
 endef
 
 %.fst: rtl/%.vvp tb/%.py FORCE
@@ -63,13 +80,21 @@ endef
 %.synth.fst: rtl/%.synth.vvp tb/%.py FORCE
 	$(run-vvp)
 
+%.place.fst: PLUSARGS += +sdf=rtl/$*.sdf
+%.place.fst: rtl/%.place.vvp rtl/%.sdf tb/%.py FORCE
+	$(run-vvp)
+
 MODULES := pcs pmd_io nrzi_encode nrzi_decode scramble descramble mdio mdio_io mii_io_rx mii_io_tx
 MODULES += mdio_regs
 
 .PHONY: test
 test: $(addsuffix .fst,$(MODULES)) $(addsuffix .synth.fst,$(MODULES))
+#test: $(addsuffix .place.fst,$(MODULES))
+
+.PHONY: asc
+asc: $(addprefix rtl/,$(addsuffix .asc,$(MODULES)))
 
 .PHONY: clean
 clean:
-	rm *.fst
-	cd rtl && rm -f *.json *.asc *.pre *.vvp *.d *.synth.v
+	rm -f *.fst
+	cd rtl && rm -f *.json *.asc *.pre *.vvp *.d *.synth.v *.place.v
