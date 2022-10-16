@@ -26,7 +26,6 @@ module mii_io_tx (
 	reg ce_next, raw_enable;
 	reg tx_clk_p_next, tx_clk_n, tx_clk_n_next;
 	reg [2:0] counter, counter_next;
-	/* I have no idea why we need to use initial... */
 	initial counter = 4;
 
 	always @(*) begin

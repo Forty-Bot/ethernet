@@ -30,7 +30,8 @@ module descramble (
 	 * required in certain situations.
 	 */
 	localparam CONSECUTIVE_IDLES = 5'd29;
-	reg [4:0] idle_counter = CONSECUTIVE_IDLES, idle_counter_next;
+	reg [4:0] idle_counter, idle_counter_next;
+	initial idle_counter = CONSECUTIVE_IDLES;
 
 	/*
 	 * The amount of time without recieving consecutive idles before we

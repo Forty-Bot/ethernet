@@ -48,8 +48,9 @@ module mdio (
 	reg [15:0] data_next;
 
 	reg bad, bad_next, saved_err, saved_err_next;
-	reg [2:0] state = IDLE, state_next;
+	reg [2:0] state, state_next;
 	reg [4:0] state_counter, state_counter_next;
+	initial state = IDLE;
 
 	/*
 	 * NB: stb_next and data_next are assigned to stb and data_write every

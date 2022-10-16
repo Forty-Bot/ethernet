@@ -23,7 +23,8 @@ module mdio_io (
 	reg mdi_next;
 	reg [1:0] last_mdc;
 	/* Two clock delay to allow the level shifter to reverse direction */
-	reg [2:0] oe = 0;
+	reg [2:0] oe;
+	initial oe = 0;
 
 `ifdef SYNTHESIS
 	SB_IO #(
