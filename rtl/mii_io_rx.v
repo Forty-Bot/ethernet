@@ -24,31 +24,31 @@ module mii_io_rx (
 );
 
 	reg rx_clk_p_next, rx_clk_n, rx_clk_n_next;
-	reg [1:0] state = HIGH, state_next;
+	reg [1:0] state, state_next;
+	initial state = HIGH;
 
 	localparam LOW		= 2;
 	localparam RISING	= 1;
 	localparam HIGH		= 0;
 
 	always @(*) begin
-		rx_clk_p_next = 0;
-		rx_clk_n_next = 0;
 		if (ce) begin
 			state_next = LOW;
-		end else case (state)
-		LOW: begin
+			rx_clk_p_next = 0;
+			rx_clk_n_next = 0;
+		end else if (state == LOW) begin
 			state_next = RISING;
-		end
-		RISING: begin
+			rx_clk_p_next = 0;
+			rx_clk_n_next = 0;
+		end else if (state == RISING) begin
 			state_next = HIGH;
+			rx_clk_p_next = 0;
 			rx_clk_n_next = 1;
-		end
-		HIGH: begin
+		end else begin
 			state_next = HIGH;
 			rx_clk_p_next = 1;
 			rx_clk_n_next = 1;
 		end
-		endcase
 	end
 
 	always @(posedge clk) begin
