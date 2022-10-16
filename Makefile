@@ -7,14 +7,19 @@ PNR = nextpnr-ice40
 ICARUS = iverilog
 VVP = vvp
 
+.DELETE_ON_ERROR:
+
 .PHONY: all
 all: rtl/pcs.asc
 
 .PHONY: FORCE
 FORCE:
 
-%.synth.json: %.v
-	$(SYNTH) -q -E $@.d -p "synth_ice40 -top $(*F)" -b json -o $@ -f verilog $<
+log:
+	mkdir $@
+
+%.synth.json: %.v | log
+	$(SYNTH) -q -E $@.d -p "synth_ice40 -top $(*F)" -b json -o $@ -f verilog $< -l log/$(*F).synth
 
 define run-jsontov =
 	( echo '`include "common.vh"'; grep timescale $*.v; \
