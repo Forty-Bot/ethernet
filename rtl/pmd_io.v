@@ -19,14 +19,14 @@ module pmd_io (
 	input rx_clk_125,
 
 	input signal_detect,
-	input rx,
-	output reg tx,
+	input indicate_data,
+	output reg request_data,
 
 	/* PMD */
 	output signal_status,
-	input pmd_data_tx,
-	output reg [1:0] pmd_data_rx,
-	output reg [1:0] pmd_data_rx_valid
+	input tx_data,
+	output reg [1:0] rx_data,
+	output reg [1:0] rx_data_valid
 );
 
 	reg [1:0] rx_p, rx_n;
@@ -45,8 +45,8 @@ module pmd_io (
 	SB_IO #(
 		.PIN_TYPE(`PIN_OUTPUT_NEVER | `PIN_INPUT_DDR),
 		.IO_STANDARD("SB_LVDS_INPUT")
-	) data_rx_pin (
-		.PACKAGE_PIN(rx),
+	) rx_data_pin (
+		.PACKAGE_PIN(indicate_data),
 		.INPUT_CLK(rx_clk_250),
 		.D_IN_0(rx_p[0]),
 		.D_IN_1(rx_n[0])
@@ -56,10 +56,10 @@ module pmd_io (
 		sd_delay[0] <= signal_detect;
 
 	always @(posedge rx_clk_250)
-		rx_p[0] <= rx;
+		rx_p[0] <= indicate_data;
 
 	always @(negedge rx_clk_250)
-		rx_n[0] <= rx;
+		rx_n[0] <= indicate_data;
 `endif
 
 	/*
@@ -116,7 +116,7 @@ module pmd_io (
 	initial state = A;
 	reg valid, valid_next;
 	initial valid = 0;
-	reg [1:0] pmd_data_rx_next, pmd_data_rx_valid_next;
+	reg [1:0] rx_data_next, rx_data_valid_next;
 	reg [3:0] rx_r, rx_f;
 
 	always @(*) begin
@@ -152,51 +152,51 @@ module pmd_io (
 			valid_next = 0;
 		end
 		
-		pmd_data_rx_next[0] = rx_d[2];
-		pmd_data_rx_valid_next = 1;
+		rx_data_next[0] = rx_d[2];
+		rx_data_valid_next = 1;
 		case (state_next)
 		A: begin
-			pmd_data_rx_next[1] = rx_a[2];
+			rx_data_next[1] = rx_a[2];
 			if (state == D)
-				pmd_data_rx_valid_next = 0;
+				rx_data_valid_next = 0;
 		end
 		B: begin
-			pmd_data_rx_next[1] = rx_b[2];
+			rx_data_next[1] = rx_b[2];
 		end
 		C: begin
-			pmd_data_rx_next[1] = rx_c[2];
+			rx_data_next[1] = rx_c[2];
 		end
 		D: begin
-			pmd_data_rx_next[1] = rx_d[2];
+			rx_data_next[1] = rx_d[2];
 			if (state == A) begin
-				pmd_data_rx_next[1] = rx_a[2];
-				pmd_data_rx_valid_next = 2;
+				rx_data_next[1] = rx_a[2];
+				rx_data_valid_next = 2;
 			end
 		end
 		endcase
 
 		if (!valid_next)
-			pmd_data_rx_valid_next = 0;
+			rx_data_valid_next = 0;
 	end
 
 	always @(posedge rx_clk_125) begin
 		state <= state_next;
 		valid <= valid_next;
-		pmd_data_rx <= pmd_data_rx_next;
-		pmd_data_rx_valid <= pmd_data_rx_valid_next;
+		rx_data <= rx_data_next;
+		rx_data_valid <= rx_data_valid_next;
 	end
 
 `ifdef SYNTHESIS
 	SB_IO #(
 		.PIN_TYPE(`PIN_OUTPUT_ALWAYS | `PIN_OUTPUT_REGISTERED),
-	) data_txp_pin (
-		.PACKAGE_PIN(tx),
+	) tx_datap_pin (
+		.PACKAGE_PIN(request_data),
 		.OUTPUT_CLK(rx_clk_125),
-		.D_OUT_0(pmd_data_tx)
+		.D_OUT_0(tx_data)
 	);
 `else
 	always @(posedge tx_clk)
-		tx <= pmd_data_tx;
+		request_data <= tx_data;
 `endif
 
 `ifndef SYNTHESIS

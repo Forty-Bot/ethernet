@@ -41,7 +41,7 @@ async def test_rx(pmd, delays):
         await Timer(random.randrange(1, 8000), units='ps')
         pmd.signal_detect.value = 1
         for i, delay in zip(ins, delays(len(ins))):
-            pmd.rx.value = i
+            pmd.indicate_data.value = i
             try:
                 pmd.delay.value = delay
             except AttributeError:
@@ -55,14 +55,14 @@ async def test_rx(pmd, delays):
     outs = []
     while pmd.signal_status.value:
         await RisingEdge(pmd.rx_clk_125)
-        valid = pmd.pmd_data_rx_valid.value
+        valid = pmd.rx_data_valid.value
         if valid == 0:
             pass
         elif valid == 1:
-            outs.append(pmd.pmd_data_rx[1].value)
+            outs.append(pmd.rx_data[1].value)
         else:
-            outs.append(pmd.pmd_data_rx[1].value)
-            outs.append(pmd.pmd_data_rx[0].value)
+            outs.append(pmd.rx_data[1].value)
+            outs.append(pmd.rx_data[0].value)
 
     best_corr = -1
     best_off = None
