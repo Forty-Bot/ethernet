@@ -19,8 +19,8 @@ module pmd_io (
 	input rx_clk_125,
 
 	input signal_detect,
-	output reg tx_p, tx_n,
 	input rx,
+	output reg tx,
 
 	/* PMD */
 	output signal_status,
@@ -187,26 +187,14 @@ module pmd_io (
 `ifdef SYNTHESIS
 	SB_IO #(
 		.PIN_TYPE(`PIN_OUTPUT_ALWAYS | `PIN_OUTPUT_REGISTERED),
-		.IO_STANDARD("SB_LVDS_INPUT")
 	) data_txp_pin (
-		.PACKAGE_PIN(tx_p),
-		.OUTPUT_CLK(rx_clk_125),
-		.D_OUT_0(pmd_data_tx)
-	);
-
-	SB_IO #(
-		.PIN_TYPE(`PIN_OUTPUT_ALWAYS | `PIN_OUTPUT_REGISTERED_INVERTED),
-		.IO_STANDARD("SB_LVDS_INPUT")
-	) data_txn_pin (
-		.PACKAGE_PIN(tx_n),
+		.PACKAGE_PIN(tx),
 		.OUTPUT_CLK(rx_clk_125),
 		.D_OUT_0(pmd_data_tx)
 	);
 `else
-	always @(posedge tx_clk) begin
-		tx_p <= pmd_data_tx;
-		tx_n <= ~pmd_data_tx;
-	end
+	always @(posedge tx_clk)
+		tx <= pmd_data_tx;
 `endif
 
 `ifndef SYNTHESIS
