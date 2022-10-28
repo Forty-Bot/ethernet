@@ -22,9 +22,7 @@ log:
 	$(SYNTH) -q -E $@.d -p "synth_ice40 -top $(*F)" -b json -o $@ -f verilog $< -l log/$(*F).synth
 
 define run-jsontov =
-	( echo '`include "common.vh"'; grep timescale $*.v; \
-	  $(SYNTH) -q -p "write_verilog -defparam -noattr" -f json $< ) | \
-	  sed 's/endmodule/`DUMP(1)\n\0/g' > $@
+	( grep timescale $*.v; $(SYNTH) -q -p "write_verilog -defparam -noattr" -f json $< ) > $@
 endef
 
 %.synth.v: %.synth.json %.v
@@ -35,28 +33,29 @@ endef
 
 # Don't warn about including the timescale from common.vh
 IFLAGS := -g2012 -gspecify -Wall -Wno-timescale
+EXTRA_V := rtl/iverilog_dump.v
 
 define run-icarus =
-$(ICARUS) $(IFLAGS) -I$(<D) -M$@.pre -s $(TOP) -o $@ $< $(EXTRA_V) && \
+$(ICARUS) $(IFLAGS) -I$(<D) -y$(<D) -M$@.pre -DTOP=$(TOP) -s $(TOP) -s dump -o $@ $< $(EXTRA_V) && \
 	( echo -n "$@: " && tr '\n' ' ' ) < $@.pre > $@.d; RET=$$?; rm -f $@.pre; exit $$RET
 endef
 
 %.vvp: TOP = $(*F)
-%.vvp: %.v
+%.vvp: %.v rtl/iverilog_dump.v
 	$(run-icarus)
 
 %.synth.vvp: TOP = $(*F)
-%.synth.vvp %.place.vvp: EXTRA_V := $(shell $(SYNTH)-config --datdir)/ice40/cells_sim.v
+%.synth.vvp %.place.vvp: EXTRA_V += $(shell $(SYNTH)-config --datdir)/ice40/cells_sim.v
 # Don't warn about unused SB_IO ports
 %.synth.vvp: IFLAGS += -Wno-portbind
-%.synth.vvp: %.synth.v
+%.synth.vvp: %.synth.v rtl/iverilog_dump.v
 	$(run-icarus)
 
 %.place.vvp: TOP = top
 # Don't warn about unused SB_IO ports
 %.place.vvp: IFLAGS += -Wno-portbind
 %.place.vvp: IFLAGS += -DTIMING -Ttyp
-%.place.vvp: %.place.v
+%.place.vvp: %.place.v rtl/iverilog_dump.v
 	$(run-icarus)
 
 %.asc %.sdf %.place.json &: %.synth.json | log
@@ -79,13 +78,15 @@ define run-vvp =
 MODULE=tb.$* $(VVP) $(VVPFLAGS) $< $(PLUSARGS)
 endef
 
+%.fst: PLUSARGS += +levels=0
 %.fst: rtl/%.vvp tb/%.py FORCE
 	$(run-vvp)
 
+%.synth.fst: PLUSARGS += +levels=1
 %.synth.fst: rtl/%.synth.vvp tb/%.py FORCE
 	$(run-vvp)
 
-%.place.fst: PLUSARGS += +sdf=rtl/$*.sdf
+%.place.fst: PLUSARGS += +levels=1 +sdf=rtl/$*.sdf
 %.place.fst: rtl/%.place.vvp rtl/%.sdf tb/%.py FORCE
 	$(run-vvp)
 

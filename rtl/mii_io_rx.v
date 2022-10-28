@@ -121,6 +121,4 @@ module mii_io_rx (
 	end
 `endif
 
-	`DUMP(0)
-
 endmodule

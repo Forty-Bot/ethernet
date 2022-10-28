@@ -9,19 +9,4 @@
 `default_nettype none
 `timescale 1ns/1ns
 
-`ifdef SYNTHESIS
-`define DUMP(levels)
-`else
-`define DUMP(levels) \
-	reg [4096:0] vcdfile, sdffile; \
-	initial begin \
-		if ($value$plusargs("vcd=%s", vcdfile)) begin \
-			$dumpfile(vcdfile); \
-			$dumpvars(levels); \
-		end \
-		if ($value$plusargs("sdf=%s", sdffile)) \
-			$sdf_annotate(sdffile); \
-	end
-`endif
-
 `endif /* COMMON_VH */

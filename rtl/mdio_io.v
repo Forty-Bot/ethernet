@@ -78,6 +78,4 @@ module mdio_io (
 			oe <= 0;
 	end
 
-	`DUMP(0)
-
 endmodule

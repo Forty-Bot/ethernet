@@ -23,6 +23,4 @@ module scramble (
 	always @(posedge clk)
 		lfsr = { lfsr[9:0], lfsr_next };
 
-	`DUMP(0)
-
 endmodule

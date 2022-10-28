@@ -113,6 +113,4 @@ module mii_io_tx (
 	end
 `endif
 
-	`DUMP(0)
-
 endmodule

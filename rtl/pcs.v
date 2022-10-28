@@ -90,8 +90,6 @@ module pcs (
 	assign col = transmitting && receiving;
 	assign crs = transmitting || receiving;
 
-	`DUMP(0)
-
 endmodule
 
 /* Transmit process */

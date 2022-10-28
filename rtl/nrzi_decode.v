@@ -34,6 +34,4 @@ module nrzi_decode (
 		nrz <= nrz_next;
 	end
 
-	`DUMP(0)
-
 endmodule

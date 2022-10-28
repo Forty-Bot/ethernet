@@ -20,6 +20,4 @@ module nrzi_encode (
 	always @(posedge clk)
 		nrzi <= nrzi_next;
 
-	`DUMP(0)
-
 endmodule

@@ -149,6 +149,4 @@ module mdio_regs (
 		data_read <= data_read_next;
 	end
 
-	`DUMP(0)
-
 endmodule

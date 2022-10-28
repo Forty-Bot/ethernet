@@ -115,6 +115,4 @@ module descramble (
 		end
 	end
 
-	`DUMP(0)
-
 endmodule

@@ -216,6 +216,4 @@ module mdio (
 	end
 `endif
 
-	`DUMP(0)
-
 endmodule

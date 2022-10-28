@@ -213,6 +213,4 @@ module pmd_io (
 	end
 `endif
 
-	`DUMP(0)
-
 endmodule
