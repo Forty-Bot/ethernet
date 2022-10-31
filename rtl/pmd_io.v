@@ -35,7 +35,6 @@ module pmd_io (
 `ifdef SYNTHESIS
 	SB_IO #(
 		.PIN_TYPE(`PIN_OUTPUT_NEVER | `PIN_INPUT_REGISTERED),
-		.IO_STANDARD("SB_LVDS_INPUT")
 	) signal_detect_pin (
 		.PACKAGE_PIN(signal_detect),
 		.INPUT_CLK(rx_clk_125),
@@ -44,7 +43,6 @@ module pmd_io (
 
 	SB_IO #(
 		.PIN_TYPE(`PIN_OUTPUT_NEVER | `PIN_INPUT_DDR),
-		.IO_STANDARD("SB_LVDS_INPUT")
 	) rx_data_pin (
 		.PACKAGE_PIN(indicate_data),
 		.INPUT_CLK(rx_clk_250),
