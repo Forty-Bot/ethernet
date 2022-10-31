@@ -81,7 +81,7 @@ module pmd_io (
 		rx_n[1] <= rx_n[0];
 	end
 
-	reg [2:0] rx_a, rx_b, rx_c, rx_d;
+	reg [3:0] rx_a, rx_b, rx_c, rx_d;
 
 	/* Get everything in the rx_clk_125 domain */
 	always @(posedge rx_clk_125) begin
@@ -96,13 +96,14 @@ module pmd_io (
 
 	/*
 	 * Buffer things a bit. We wait a cycle to avoid metastability. After
-	 * that, we need two cycles of history to detect edges.
+	 * that, we need two cycles of history to detect edges, plus a final
+	 * cycle to select from.
 	 */
 	always @(posedge rx_clk_125) begin
-		rx_a[2:1] <= rx_a[1:0];
-		rx_b[2:1] <= rx_b[1:0];
-		rx_c[2:1] <= rx_c[1:0];
-		rx_d[2:1] <= rx_d[1:0];
+		rx_a[3:1] <= rx_a[2:0];
+		rx_b[3:1] <= rx_b[2:0];
+		rx_c[3:1] <= rx_c[2:0];
+		rx_d[3:1] <= rx_d[2:0];
 	end
 
 	localparam A = 0;
@@ -113,6 +114,7 @@ module pmd_io (
 	reg [1:0] state, state_next;
 	initial state = A;
 	reg valid, valid_next;
+	reg wraparound, wraparound_next;
 	initial valid = 0;
 	reg [1:0] rx_data_next, rx_data_valid_next;
 	reg [3:0] rx_r, rx_f;
@@ -134,40 +136,43 @@ module pmd_io (
 
 		state_next = state;
 		valid_next = 1;
-		if (rx_r == 4'b1111 || rx_f == 4'b1111)
+		wraparound_next = 0;
+		if (rx_r == 4'b1111 || rx_f == 4'b1111) begin
 			state_next = C;
-		else if (rx_r == 4'b1000 || rx_f == 4'b1000)
+		end else if (rx_r == 4'b1000 || rx_f == 4'b1000) begin
 			state_next = D;
-		else if (rx_r == 4'b1100 || rx_f == 4'b1100)
+			wraparound_next = state == A;
+		end else if (rx_r == 4'b1100 || rx_f == 4'b1100) begin
 			state_next = A;
-		else if (rx_r == 4'b1110 || rx_f == 4'b1110)
+			wraparound_next = state == D;
+		end else if (rx_r == 4'b1110 || rx_f == 4'b1110) begin
 			state_next = B;
-		else
+		end else begin
 			valid_next = valid;
+		end
 
 		if (!signal_status) begin
 			state_next = A;
 			valid_next = 0;
 		end
 		
-		rx_data_next[0] = rx_d[2];
+		rx_data_next[0] = rx_d[3];
 		rx_data_valid_next = 1;
-		case (state_next)
+		case (state)
 		A: begin
-			rx_data_next[1] = rx_a[2];
-			if (state == D)
-				rx_data_valid_next = 0;
+			rx_data_next[1] = rx_a[3];
+			rx_data_valid_next = !wraparound;
 		end
 		B: begin
-			rx_data_next[1] = rx_b[2];
+			rx_data_next[1] = rx_b[3];
 		end
 		C: begin
-			rx_data_next[1] = rx_c[2];
+			rx_data_next[1] = rx_c[3];
 		end
 		D: begin
-			rx_data_next[1] = rx_d[2];
-			if (state == A) begin
-				rx_data_next[1] = rx_a[2];
+			rx_data_next[1] = rx_d[3];
+			if (wraparound) begin
+				rx_data_next[1] = rx_a[3];
 				rx_data_valid_next = 2;
 			end
 		end
@@ -180,6 +185,7 @@ module pmd_io (
 	always @(posedge rx_clk_125) begin
 		state <= state_next;
 		valid <= valid_next;
+		wraparound <= wraparound_next;
 		rx_data <= rx_data_next;
 		rx_data_valid <= rx_data_valid_next;
 	end
