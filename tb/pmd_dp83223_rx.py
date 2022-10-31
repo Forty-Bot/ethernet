@@ -40,8 +40,23 @@ async def test_rx(pmd, delays):
         # random phase
         await Timer(random.randrange(1, 8000), units='ps')
         pmd.signal_detect.value = 1
+
+        last_bit = ins[0]
+        running_disparity = 0
         for i, delay in zip(ins, delays(len(ins))):
             pmd.indicate_data.value = i
+            # Keep track of how far off we are...
+            if i != last_bit:
+                running_disparity = 0
+            running_disparity += 8000 - delay
+            last_bit = i
+
+            # If we get more than a quarter cycle off, use perfect delay until
+            # we get a transition
+            if abs(running_disparity) >= 2000:
+                running_disparity -= 8000 - delay
+                delay = 8000
+
             try:
                 pmd.delay.value = delay
             except AttributeError:
