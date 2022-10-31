@@ -34,14 +34,25 @@ module descramble (
 	initial idle_counter = CONSECUTIVE_IDLES;
 
 	/*
+	 * We use a LFSR for the unlock counter in order to relax the timing
+	 * requirements. Although we could use a 16-bit register, we use
+	 * a 17-bit one to reduce the number of taps we need. Values were
+	 * generated with the following python script:
+	 *
+	 * lfsr = 0x1ffff
+	 * for _ in range(2**17 - cycles - 1):
+	 *     lfsr = ((lfsr << 1) & 0x1ffff) | (((lfsr >> 16) & 1) ^ ((lfsr >> 13) & 1))
+	 *
 	 * The amount of time without recieving consecutive idles before we
-	 * unlock. This must be greater than 361us (7.2.3.3(f)). 2^16-1 works
-	 * out to around 524us at 125MHz.
+	 * unlock. This must be greater than 361us (7.2.3.3(f)), which is
+	 * 45125 cycles at 125MHz.
 	 */
-	localparam UNLOCK_TIME = 16'hffff;
-	/* 5us, or around one minimum-length packet plus some extra */
-	localparam TEST_UNLOCK_TIME = 16'd625;
-	reg [15:0] unlock_counter, unlock_counter_next;
+	localparam UNLOCK_VALUE = 17'h29fc;
+	/* One 9000-byte jumbo frame plus an extra preamble */
+	localparam JUMBO_UNLOCK_VALUE = 17'h12d84;
+	/* One minimum-length packet plus some extra (5us or 625 cycles) */
+	localparam TEST_UNLOCK_VALUE = 17'h11077;
+	reg [16:0] unlock_counter, unlock_counter_next;
 
 	always @(*) begin
 		ldd = { lfsr[8] ^ lfsr[10], lfsr[7] ^ lfsr[9] };
@@ -88,9 +99,10 @@ module descramble (
 		locked_next = 1;
 		unlock_counter_next = unlock_counter;
 		if (relock) begin
-			unlock_counter_next = test_mode ? TEST_UNLOCK_TIME : UNLOCK_TIME;
-		end else if (|unlock_counter) begin
-			unlock_counter_next = unlock_counter - 1;
+			unlock_counter_next = test_mode ? TEST_UNLOCK_VALUE : UNLOCK_VALUE;
+		end else if (!(&unlock_counter)) begin
+			unlock_counter_next[0] = unlock_counter[16] ^ unlock_counter[13];
+			unlock_counter_next[16:1] = unlock_counter[15:0];
 		end else begin
 			locked_next = 0;
 		end
@@ -109,7 +121,7 @@ module descramble (
 			lfsr <= 0;
 			idle_counter <= CONSECUTIVE_IDLES;
 			relock <= 0;
-			unlock_counter <= 0;
+			unlock_counter <= 17'h1ffff;
 			locked <= 0;
 			descrambled_valid <= 0;
 		end
