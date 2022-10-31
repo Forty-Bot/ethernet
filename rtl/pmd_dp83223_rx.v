@@ -27,7 +27,7 @@ module pmd_dp83223_rx (
 );
 
 	reg [1:0] rx_p, rx_n;
-	reg [3:0] sd_delay;
+	reg [4:0] sd_delay;
 
 `ifdef SYNTHESIS
 	SB_IO #(
@@ -64,9 +64,9 @@ module pmd_dp83223_rx (
 	 * it helps out during simulation. It also helps avoid metastability.
 	 */
 	always @(posedge clk_125)
-		sd_delay[3:1] <= sd_delay[2:0];
+		sd_delay[4:1] <= sd_delay[3:0];
 
-	assign signal_status = sd_delay[3];
+	assign signal_status = sd_delay[4];
 
 	/*
 	 * Get things into the clk_250 domain so that we sample posedge before
