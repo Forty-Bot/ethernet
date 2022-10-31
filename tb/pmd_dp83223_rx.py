@@ -30,10 +30,10 @@ def maxdelays(count):
 async def test_rx(pmd, delays):
     pmd.signal_detect.value = 0
     await Timer(1)
-    await cocotb.start(Clock(pmd.rx_clk_125, 8, units='ns').start())
+    await cocotb.start(Clock(pmd.clk_125, 8, units='ns').start())
     # random phase
     await Timer(random.randrange(1, 8000), units='ps')
-    await cocotb.start(Clock(pmd.rx_clk_250, 4, units='ns').start())
+    await cocotb.start(Clock(pmd.clk_250, 4, units='ns').start())
 
     ins = [random.randrange(2) for _ in range(BITS)]
     async def generate_bits():
@@ -54,7 +54,7 @@ async def test_rx(pmd, delays):
     await RisingEdge(pmd.signal_status)
     outs = []
     while pmd.signal_status.value:
-        await RisingEdge(pmd.rx_clk_125)
+        await RisingEdge(pmd.clk_125)
         valid = pmd.rx_data_valid.value
         if valid == 0:
             pass
