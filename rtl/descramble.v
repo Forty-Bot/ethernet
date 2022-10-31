@@ -71,29 +71,41 @@ module descramble (
 		else if (scrambled_valid[1])
 			lfsr_next = { lfsr[8:0], locked ? ldd : ~scrambled };
 
-		idle_counter_next = idle_counter;
-		if (scrambled_valid[1]) begin
-			if (descrambled_next[1] && descrambled_next[0])
-				idle_counter_next = idle_counter - 2;
-			else if (descrambled_next[0])
-				idle_counter_next = idle_counter - 1;
-			else
-				idle_counter_next = CONSECUTIVE_IDLES;
-		end else if (scrambled_valid[0]) begin
-			if (descrambled_next[1])
-				idle_counter_next = idle_counter - 1;
-			else
-				idle_counter_next = CONSECUTIVE_IDLES;
-		end
+		/*
+		 * Reset the counter to 2 to ensure we can always subtract
+		 * idles without underflowing. This clause is made to depend
+		 * on idle_counter (and not idle_counter_next) to reduce the critical
+		 * path. The actual condition is idle_counter_next <= 1 (aka
+		 * we are about to underflow, and have gotten at least 28
+		 * consecutive 1s).
+		 */
+`define RELOCK begin \
+	idle_counter_next = 2; \
+	relock_next = 1; \
+end
 
+		idle_counter_next = idle_counter;
 		relock_next = 0;
-		if (!idle_counter_next[4:1]) begin
-			/*
-			 * Reset the counter to 2 to ensure we can always
-			 * subtract idles without underflowing
-			 */
-			idle_counter_next = 2;
-			relock_next = 1;
+		if (scrambled_valid[1]) begin
+			if (descrambled_next[1] && descrambled_next[0]) begin
+				idle_counter_next = idle_counter - 2;
+				if (!idle_counter[4:2])
+					`RELOCK
+			end else if (descrambled_next[0]) begin
+				idle_counter_next = idle_counter - 1;
+				if (!idle_counter[4:2] && idle_counter[1:0] != 2'b11)
+					`RELOCK
+			end else begin
+				idle_counter_next = CONSECUTIVE_IDLES;
+			end
+		end else if (scrambled_valid[0]) begin
+			if (descrambled_next[1]) begin
+				idle_counter_next = idle_counter - 1;
+				if (!idle_counter[4:2] && idle_counter[1:0] != 2'b11)
+					`RELOCK
+			end else begin
+				idle_counter_next = CONSECUTIVE_IDLES;
+			end
 		end
 
 		locked_next = 1;
