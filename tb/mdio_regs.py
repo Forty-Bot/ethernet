@@ -19,6 +19,7 @@ PWCR = 17
 DCR = 18
 FCCR = 19
 SECR = 21
+VCR = 30
 
 BMCR_RESET = BIT(15)
 BMCR_LOOPBACK = BIT(14)
@@ -33,6 +34,9 @@ BMSR_100BASEXFD = BIT(14)
 BMSR_100BASEXHD = BIT(13)
 BMSR_LSTATUS = BIT(2)
 BMSR_EXTCAP = BIT(0)
+
+VCR_DTEST = BIT(15)
+VCR_LTEST = BIT(14)
 
 @cocotb.test(timeout_time=1, timeout_unit='us')
 async def test_mdio(regs):
@@ -65,16 +69,19 @@ async def test_mdio(regs):
         if data is None and regs.ack.value:
             return regs.data_read.value
 
-    async def bmcr_toggle(bit, signal):
+    async def reg_toggle(reg, bit, signal, ro_mask=0):
         if signal:
             assert not signal.value
-        await xfer(BMCR, bit)
+        await xfer(reg, bit)
         if signal:
             assert signal.value
-        assert await xfer(BMCR) == (BMCR_SPEED_LSB | bit)
-        await xfer(BMCR, 0)
+        assert await xfer(reg) == (ro_mask | bit)
+        await xfer(reg, 0)
         if signal:
             assert not signal.value
+
+    def bmcr_toggle(bit, signal):
+        return reg_toggle(BMCR, bit, signal, ro_mask=BMCR_SPEED_LSB)
 
     assert await xfer(BMCR) == (BMCR_SPEED_LSB | BMCR_ISOLATE)
     await bmcr_toggle(BMCR_LOOPBACK, regs.loopback)
@@ -123,3 +130,6 @@ async def test_mdio(regs):
     await counter_test(DCR, regs.link_status, True, False)
     await counter_test(FCCR, regs.false_carrier, True)
     await counter_test(SECR, regs.symbol_error)
+
+    await reg_toggle(VCR, VCR_DTEST, regs.descrambler_test)
+    await reg_toggle(VCR, VCR_LTEST, regs.link_monitor_test)

@@ -23,7 +23,9 @@ module mdio_regs (
 	output reg loopback,
 	output reg pdown,
 	output reg isolate,
-	output reg coltest
+	output reg coltest,
+	output reg descrambler_test,
+	output reg link_monitor_test
 );
 
 	/* The current price of a CID is $805... */
@@ -65,6 +67,8 @@ module mdio_regs (
 	localparam FCCR		= 19;
 	/* Symbol Error Counter Register */
 	localparam SECR		= 21;
+	/* Vendor Control Register */
+	localparam VCR		= 30;
 
 	localparam BMCR_RESET		= 15;
 	localparam BMCR_LOOPBACK	= 14;
@@ -80,10 +84,16 @@ module mdio_regs (
 	localparam BMSR_LSTATUS		= 2;
 	localparam BMSR_EXTCAP		= 0;
 
+	/* VCR Descrambler test mode */
+	localparam VCR_DTEST		= 15;
+	/* VCR Link monitor test mode */
+	localparam VCR_LTEST		= 14;
+
 	integer i;
 	reg duplex, false_carrier_last, false_carrier_event;
 	reg link_status_latched, link_status_latched_next, link_status_last, disconnect;
 	reg loopback_next, pdown_next, isolate_next, duplex_next, coltest_next;
+	reg descrambler_test_next, link_monitor_test_next;
 	reg [15:0] data_read_next;
 	/* Can't meet timing at 16 bits wide */
 	reg [COUNTER_WIDTH-1:0] nwc, pwc, dc, fcc, sec;
@@ -104,6 +114,8 @@ module mdio_regs (
 			fcc = 0;
 			sec = 0;
 		end
+		descrambler_test = 0;
+		link_monitor_test = 0;
 	end
 
 	always @(*) begin
@@ -115,6 +127,8 @@ module mdio_regs (
 		link_status_latched_next = link_status_latched && link_status;
 		disconnect = link_status_last && !link_status;
 		false_carrier_event = false_carrier && !false_carrier_last;
+		descrambler_test_next = descrambler_test;
+		link_monitor_test_next = link_monitor_test;
 
 		if (ENABLE_COUNTERS) begin
 			nwc_next = nwc;
@@ -163,6 +177,8 @@ module mdio_regs (
 						fcc_next = false_carrier_event;
 						sec_next = symbol_error;
 					end
+					descrambler_test_next = 0;
+					link_monitor_test_next = 0;
 				end
 			end
 		end
@@ -215,6 +231,15 @@ module mdio_regs (
 			if (cyc && stb)
 				sec_next = we ? data_write : symbol_error;
 		end
+		VCR: begin
+			data_read_next[VCR_DTEST] = descrambler_test;
+			data_read_next[VCR_LTEST] = link_monitor_test;
+
+			if (cyc && stb && we) begin
+				descrambler_test_next = data_write[VCR_DTEST];
+				link_monitor_test_next = data_write[VCR_LTEST];
+			end
+		end
 		default: begin
 			if (EMULATE_PULLUP) begin
 				data_read_next = 16'hFFFF;
@@ -244,6 +269,8 @@ module mdio_regs (
 			fcc <= fcc_next;
 			sec <= sec_next;
 		end
+		descrambler_test <= descrambler_test_next;
+		link_monitor_test <= link_monitor_test_next;
 	end
 
 endmodule
