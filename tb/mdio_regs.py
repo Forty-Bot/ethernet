@@ -14,6 +14,11 @@ BMSR = 1
 PHYID1 = 2
 PHYID2 = 3
 EXTSTATUS = 15
+NWCR = 16
+PWCR = 17
+DCR = 18
+FCCR = 19
+SECR = 21
 
 BMCR_RESET = BIT(15)
 BMCR_LOOPBACK = BIT(14)
@@ -34,6 +39,10 @@ async def test_mdio(regs):
     regs.cyc.value = 1
     regs.stb.value = 0
     regs.link_status.value = 1
+    regs.positive_wraparound.value = 0
+    regs.negative_wraparound.value = 0
+    regs.false_carrier.value = 0
+    regs.symbol_error.value = 0
     await Timer(1)
     await cocotb.start(Clock(regs.clk, 8, units='ns').start())
 
@@ -93,3 +102,24 @@ async def test_mdio(regs):
     # I'm pretty sure this register will never be implemented
     assert await xfer(EXTSTATUS) is None
     assert await xfer(EXTSTATUS, 0) is None
+
+    async def counter_test(reg, signal, edge_triggered=False, active_high=True):
+        signal.value = 1 if active_high else 0
+        assert await xfer(reg) == 1
+        await xfer(reg, 0xfffe)
+        if edge_triggered:
+            signal.value = 0 if active_high else 1
+        await FallingEdge(regs.clk)
+        if edge_triggered:
+            signal.value = 1 if active_high else 0
+        await FallingEdge(regs.clk)
+        signal.value = 0 if active_high else 1
+        assert await xfer(reg) == 0x7fff
+        assert await xfer(reg) == 0
+
+    await counter_test(NWCR, regs.negative_wraparound)
+    await counter_test(PWCR, regs.positive_wraparound)
+    await xfer(DCR) # Clear DCR from the BMSR testing
+    await counter_test(DCR, regs.link_status, True, False)
+    await counter_test(FCCR, regs.false_carrier, True)
+    await counter_test(SECR, regs.symbol_error)

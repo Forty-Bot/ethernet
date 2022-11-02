@@ -16,6 +16,10 @@ module mdio_regs (
 
 	/* Control signals */
 	input link_status,
+	input positive_wraparound,
+	input negative_wraparound,
+	input false_carrier,
+	input symbol_error,
 	output reg loopback,
 	output reg pdown,
 	output reg isolate,
@@ -28,19 +32,39 @@ module mdio_regs (
 	parameter [3:0] REVISION	= 0;
 	/*
 	 * Normally, this module will assert err when read/writing to an
-	 * unknown register. The master will detect this and won't drive MDIO
-	 * line. However, this might be undesirable if there is no external
-	 * MDIO bus. Setting this parameter to 0 will cause it to ack all
-	 * transactions. Writes to unknown registers will be ignored, and
+	 * unknown register. The master will detect this and won't drive the
+	 * MDIO line. However, this might be undesirable if there is no
+	 * external MDIO bus. Setting this parameter to 0 will cause it to ack
+	 * all transactions. Writes to unknown registers will be ignored, and
 	 * reads from unknown registers will yield 16'hffff, emulating
 	 * a pull-up on MDIO.
 	 */
 	parameter EMULATE_PULLUP	= 0;
+	/* Enable counter registers */
+	parameter ENABLE_COUNTERS	= 1;
+	/*
+	 * Number of bits in counters; we can't meet timing with 16 bits, so
+	 * use a smaller default.
+	 */
+	parameter COUNTER_WIDTH		= 15;
 
+	/* c22 Basic Mode Control Register */
 	localparam BMCR		= 0;
+	/* c22 Basic Mode Status Register */
 	localparam BMSR		= 1;
+	/* c22 Phy Identifier */
 	localparam ID1		= 2;
 	localparam ID2		= 3;
+	/* Negative Wraparound Counter Register */
+	localparam NWCR		= 16;
+	/* Positive Wraparound Counter Register */
+	localparam PWCR		= 17;
+	/* Disconnect Counter Register */
+	localparam DCR		= 18;
+	/* False Carrier Counter Register */
+	localparam FCCR		= 19;
+	/* Symbol Error Counter Register */
+	localparam SECR		= 21;
 
 	localparam BMCR_RESET		= 15;
 	localparam BMCR_LOOPBACK	= 14;
@@ -57,10 +81,13 @@ module mdio_regs (
 	localparam BMSR_EXTCAP		= 0;
 
 	integer i;
-	reg duplex, link_status_latched;
+	reg duplex, false_carrier_last, false_carrier_event;
+	reg link_status_latched, link_status_latched_next, link_status_last, disconnect;
 	reg loopback_next, pdown_next, isolate_next, duplex_next, coltest_next;
-	reg link_status_latched_next;
 	reg [15:0] data_read_next;
+	/* Can't meet timing at 16 bits wide */
+	reg [COUNTER_WIDTH-1:0] nwc, pwc, dc, fcc, sec;
+	reg [COUNTER_WIDTH-1:0] nwc_next, pwc_next, dc_next, fcc_next, sec_next;
 
 	initial begin
 		loopback = 0;
@@ -69,6 +96,14 @@ module mdio_regs (
 		duplex = 0;
 		coltest = 0;
 		link_status_latched = 0;
+		link_status_last = 0;
+		if (ENABLE_COUNTERS) begin
+			nwc = 0;
+			pwc = 0;
+			dc = 0;
+			fcc = 0;
+			sec = 0;
+		end
 	end
 
 	always @(*) begin
@@ -78,6 +113,22 @@ module mdio_regs (
 		duplex_next = duplex;
 		coltest_next = coltest;
 		link_status_latched_next = link_status_latched && link_status;
+		disconnect = link_status_last && !link_status;
+		false_carrier_event = false_carrier && !false_carrier_last;
+
+		if (ENABLE_COUNTERS) begin
+			nwc_next = nwc;
+			pwc_next = pwc;
+			dc_next = dc;
+			fcc_next = fcc;
+			sec_next = sec;
+
+			if (!(&nwc)) nwc_next = nwc + negative_wraparound;
+			if (!(&pwc)) pwc_next = pwc + positive_wraparound;
+			if (!(&dc)) dc_next = dc + disconnect;
+			if (!(&fcc)) fcc_next = fcc + false_carrier_event;
+			if (!(&sec)) sec_next = sec + symbol_error;
+		end
 
 		data_read_next = 0;
 		ack = cyc && stb;
@@ -105,6 +156,13 @@ module mdio_regs (
 					duplex_next = 0;
 					coltest_next = 0;
 					link_status_latched_next = link_status;
+					if (ENABLE_COUNTERS) begin
+						nwc_next = negative_wraparound;
+						pwc_next = positive_wraparound;
+						dc_next = disconnect;
+						fcc_next = false_carrier_event;
+						sec_next = symbol_error;
+					end
 				end
 			end
 		end
@@ -127,6 +185,36 @@ module mdio_regs (
 			for (i = 0; i < 6; i = i + 1)
 				data_read_next[i + 4] = OUI[23 - i];
 		end
+		NWCR: if (ENABLE_COUNTERS) begin
+			data_read_next = nwc;
+
+			if (cyc && stb)
+				nwc_next = we ? data_write : negative_wraparound;
+		end
+		PWCR: if (ENABLE_COUNTERS) begin
+			data_read_next = pwc;
+
+			if (cyc && stb)
+				pwc_next = we ? data_write : positive_wraparound;
+		end
+		DCR: if (ENABLE_COUNTERS) begin
+			data_read_next = dc;
+
+			if (cyc && stb)
+				dc_next = we ? data_write : disconnect;
+		end
+		FCCR: if (ENABLE_COUNTERS) begin
+			data_read_next = fcc;
+
+			if (cyc && stb)
+				fcc_next = we ? data_write : false_carrier_event;
+		end
+		SECR: if (ENABLE_COUNTERS) begin
+			data_read_next = sec;
+
+			if (cyc && stb)
+				sec_next = we ? data_write : symbol_error;
+		end
 		default: begin
 			if (EMULATE_PULLUP) begin
 				data_read_next = 16'hFFFF;
@@ -146,7 +234,16 @@ module mdio_regs (
 		duplex <= duplex_next;
 		coltest <= coltest_next;
 		link_status_latched <= link_status_latched_next;
+		link_status_last <= link_status;
+		false_carrier_last <= false_carrier;
 		data_read <= data_read_next;
+		if (ENABLE_COUNTERS) begin
+			nwc <= nwc_next;
+			pwc <= pwc_next;
+			dc <= dc_next;
+			fcc <= fcc_next;
+			sec <= sec_next;
+		end
 	end
 
 endmodule
