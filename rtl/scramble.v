@@ -21,6 +21,6 @@ module scramble (
 	end
 
 	always @(posedge clk)
-		lfsr = { lfsr[9:0], lfsr_next };
+		lfsr <= { lfsr[9:0], lfsr_next };
 
 endmodule
