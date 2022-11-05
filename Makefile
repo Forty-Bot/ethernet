@@ -103,4 +103,5 @@ asc: $(addprefix rtl/,$(addsuffix .asc,$(MODULES)))
 .PHONY: clean
 clean:
 	rm -f *.fst
+	rm -rf log
 	cd rtl && rm -f *.json *.asc *.pre *.vvp *.d *.synth.v *.place.v
