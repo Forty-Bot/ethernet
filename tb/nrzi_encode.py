@@ -15,7 +15,7 @@ def nrzi_encode(bits):
         yield (last := last ^ bit)
 
 @cocotb.test(timeout_time=100, timeout_unit='us')
-async def text_encode(encoder):
+async def test_encode(encoder):
     ins = [random.randrange(2) for _ in range(1000)]
     encoder.nrz.value = ins[0]
     await Timer(1)
