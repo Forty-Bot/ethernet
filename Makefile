@@ -90,8 +90,8 @@ endef
 %.place.fst: rtl/%.place.vvp rtl/%.sdf tb/%.py FORCE
 	$(run-vvp)
 
-MODULES := pcs pmd_io nrzi_encode nrzi_decode scramble descramble mdio mdio_io mii_io_rx mii_io_tx
-MODULES += mdio_regs
+MODULES := pcs_rx pcs_tx pmd_dp83223_rx nrzi_encode nrzi_decode scramble descramble mdio mdio_io
+MODULES += mii_io_rx mii_io_tx mdio_regs
 
 .PHONY: test
 test: $(addsuffix .fst,$(MODULES)) $(addsuffix .synth.fst,$(MODULES))
