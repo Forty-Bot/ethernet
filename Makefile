@@ -36,7 +36,7 @@ IFLAGS := -g2012 -gspecify -Wall -Wno-timescale
 EXTRA_V := rtl/iverilog_dump.v
 
 define run-icarus =
-$(ICARUS) $(IFLAGS) -I$(<D) -y$(<D) -M$@.pre -DTOP=$(TOP) -s $(TOP) -s dump -o $@ $< $(EXTRA_V) && \
+$(ICARUS) $(IFLAGS) -I$(<D) -y$(<D) -M$@.pre -DTOP=$(TOP) -s $(TOP) -s iverilog_dump -o $@ $< $(EXTRA_V) && \
 	( echo -n "$@: " && tr '\n' ' ' ) < $@.pre > $@.d; RET=$$?; rm -f $@.pre; exit $$RET
 endef
 
