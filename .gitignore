@@ -4,8 +4,11 @@
 *.d
 *.json
 *.asc
-*.post.v
+*.synth.v
+*.place.v
+*.sdf
 log
+tags
 
 # test artifacts
 __pycache__
