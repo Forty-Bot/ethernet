@@ -13,6 +13,7 @@ module descramble (
 	output reg [1:0] descrambled, descrambled_valid
 );
 
+	initial descrambled_valid = 0;
 	reg relock, relock_next, locked_next;
 	initial relock = 0;
 	reg [1:0] ldd, descrambled_next;
@@ -122,20 +123,19 @@ end
 
 	always @(posedge clk) begin
 		descrambled <= descrambled_next;
+		descrambled_valid <= scrambled_valid;
 		if (signal_status) begin
 			lfsr <= lfsr_next;
 			idle_counter <= idle_counter_next;
 			relock <= relock_next;
 			unlock_counter <= unlock_counter_next;
 			locked <= locked_next;
-			descrambled_valid <= scrambled_valid;
 		end else begin
 			lfsr <= 0;
 			idle_counter <= CONSECUTIVE_IDLES;
 			relock <= 0;
 			unlock_counter <= 17'h1ffff;
 			locked <= 0;
-			descrambled_valid <= 0;
 		end
 	end
 
