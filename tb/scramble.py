@@ -12,10 +12,11 @@ from .util import alist, ReverseList, print_list_at, compare_lists
 
 threshold = 32
 
-def descramble(scrambled):
+async def descramble(scrambled):
+    consecutive = 0
     locked = False
     lfsr = ReverseList([0] * 11)
-    for s in scrambled:
+    async for s in scrambled:
         ldd = lfsr[8] ^ lfsr[10]
 
         if s ^ ldd:
@@ -46,9 +47,9 @@ async def test_scramble(scrambler):
             scrambler.unscrambled.value = bit
     await cocotb.start(send())
 
-    outs = []
-    for _ in ins:
-        await RisingEdge(scrambler.clk)
-        outs.append(scrambler.scrambled.value)
+    async def recv():
+        for _ in ins:
+            await RisingEdge(scrambler.clk)
+            yield scrambler.scrambled.value
 
-    compare_lists(ins[idles-1:], list(descramble(outs)))
+    compare_lists(ins[idles-1:], await alist(descramble(recv())))

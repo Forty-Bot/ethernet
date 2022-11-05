@@ -8,11 +8,11 @@ from cocotb.clock import Clock
 from cocotb.regression import TestFactory
 from cocotb.triggers import FallingEdge, RisingEdge, Timer
 
-from .util import compare_lists, timeout, send_recovered_bits, with_valids
+from .util import alist, async_iter, compare_lists, timeout, send_recovered_bits, with_valids
 
-def nrzi_decode(bits):
+async def nrzi_decode(bits):
     last = 1
-    for bit in bits:
+    async for bit in bits:
         yield bit ^ last
         last = bit
 
@@ -40,6 +40,6 @@ async def test_rx(decoder, valids):
             outs.append(decoder.nrz[0].value)
 
     # Ignore the first bit, since it is influenced by the initial value
-    compare_lists(list(nrzi_decode(ins))[1:], outs[1:])
+    compare_lists((await alist(nrzi_decode(async_iter(ins))))[1:], outs[1:])
 
 with_valids(globals(), test_rx)

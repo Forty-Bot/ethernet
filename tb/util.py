@@ -12,6 +12,10 @@ from cocotb.types import LogicArray
 async def alist(xs):
     return [x async for x in xs]
 
+async def async_iter(it):
+    for i in it:
+        yield i
+
 # From https://stackoverflow.com/a/7864317/5086505
 class classproperty(property):
     def __get__(self, cls, owner):

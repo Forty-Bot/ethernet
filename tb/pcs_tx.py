@@ -9,21 +9,29 @@ from cocotb.types import LogicArray
 from .pcs import Code, as_nibbles
 from .util import alist, ClockEnable, ReverseList
 
-async def mii_send_packet(pcs, nibbles):
-    await FallingEdge(pcs.ce)
-    for nibble in nibbles:
-        pcs.enable.value = 1
-        pcs.err.value = 0
-        if nibble is None:
-            pcs.err.value = 1
-        else:
-            pcs.data.value = nibble
-        await FallingEdge(pcs.ce)
+async def mii_send_packet(pcs, nibbles, signals=None):
+    if signals is None:
+        signals = {
+            'ce': pcs.ce,
+            'enable': pcs.enable,
+            'err': pcs.err,
+            'data': pcs.data,
+        }
 
-    pcs.enable.value = 0
-    pcs.err.value = 0
-    pcs.data.value = LogicArray("XXXX")
-    await FallingEdge(pcs.ce)
+    await FallingEdge(signals['ce'])
+    for nibble in nibbles:
+        signals['enable'].value = 1
+        signals['err'].value = 0
+        if nibble is None:
+            signals['err'].value = 1
+        else:
+            signals['data'].value = nibble
+        await FallingEdge(signals['ce'])
+
+    signals['enable'].value = 0
+    signals['err'].value = 0
+    signals['data'].value = LogicArray("XXXX")
+    await FallingEdge(signals['ce'])
 
 class PCSError(Exception):
     pass
