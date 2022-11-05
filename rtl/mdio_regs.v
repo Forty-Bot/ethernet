@@ -90,8 +90,7 @@ module mdio_regs (
 	localparam VCR_LTEST		= 14;
 
 	integer i;
-	reg duplex, false_carrier_last, false_carrier_event;
-	reg link_status_latched, link_status_latched_next, link_status_last, disconnect;
+	reg duplex, link_status_latched, link_status_latched_next, link_status_last, disconnect;
 	reg loopback_next, pdown_next, isolate_next, duplex_next, coltest_next;
 	reg descrambler_test_next, link_monitor_test_next;
 	reg [15:0] data_read_next;
@@ -126,7 +125,6 @@ module mdio_regs (
 		coltest_next = coltest;
 		link_status_latched_next = link_status_latched && link_status;
 		disconnect = link_status_last && !link_status;
-		false_carrier_event = false_carrier && !false_carrier_last;
 		descrambler_test_next = descrambler_test;
 		link_monitor_test_next = link_monitor_test;
 
@@ -140,7 +138,7 @@ module mdio_regs (
 			if (!(&nwc)) nwc_next = nwc + negative_wraparound;
 			if (!(&pwc)) pwc_next = pwc + positive_wraparound;
 			if (!(&dc)) dc_next = dc + disconnect;
-			if (!(&fcc)) fcc_next = fcc + false_carrier_event;
+			if (!(&fcc)) fcc_next = fcc + false_carrier;
 			if (!(&sec)) sec_next = sec + symbol_error;
 		end
 
@@ -174,7 +172,7 @@ module mdio_regs (
 						nwc_next = negative_wraparound;
 						pwc_next = positive_wraparound;
 						dc_next = disconnect;
-						fcc_next = false_carrier_event;
+						fcc_next = false_carrier;
 						sec_next = symbol_error;
 					end
 					descrambler_test_next = 0;
@@ -223,7 +221,7 @@ module mdio_regs (
 			data_read_next = fcc;
 
 			if (cyc && stb)
-				fcc_next = we ? data_write : false_carrier_event;
+				fcc_next = we ? data_write : false_carrier;
 		end
 		SECR: if (ENABLE_COUNTERS) begin
 			data_read_next = sec;
@@ -260,7 +258,6 @@ module mdio_regs (
 		coltest <= coltest_next;
 		link_status_latched <= link_status_latched_next;
 		link_status_last <= link_status;
-		false_carrier_last <= false_carrier;
 		data_read <= data_read_next;
 		if (ENABLE_COUNTERS) begin
 			nwc <= nwc_next;

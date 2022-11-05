@@ -128,7 +128,7 @@ async def test_mdio(regs):
     await counter_test(PWCR, regs.positive_wraparound)
     await xfer(DCR) # Clear DCR from the BMSR testing
     await counter_test(DCR, regs.link_status, True, False)
-    await counter_test(FCCR, regs.false_carrier, True)
+    await counter_test(FCCR, regs.false_carrier)
     await counter_test(SECR, regs.symbol_error)
 
     await reg_toggle(VCR, VCR_DTEST, regs.descrambler_test)

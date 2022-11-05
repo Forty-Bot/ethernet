@@ -190,7 +190,8 @@ module pcs_rx (
 	input link_status,
 
 	/* Internal */
-	output reg rx
+	output reg rx,
+	output reg false_carrier
 );
 
 	localparam IDLE		= 0;
@@ -210,7 +211,7 @@ module pcs_rx (
 	reg [2:0] state, state_next;
 	initial state = IDLE;
 	/* Whether we are aligned and receiving */
-	reg rx_next;
+	reg rx_next, false_carrier_next;
 
 	pcs_rx_bits rx_bits (
 		.clk(clk),
@@ -261,6 +262,7 @@ module pcs_rx (
 		state_next = state;
 		valid_next = valid;
 		err_next = 0;
+		false_carrier_next = 0;
 
 `define BAD_SSD begin \
 	state_next = BAD_SSD; \
@@ -279,8 +281,10 @@ end
 				ce_next = 0;
 				if (unaligned == { `CODE_I, `CODE_J })
 					state_next = START_J;
-				else
+				else begin
 					`BAD_SSD;
+					false_carrier_next = 1;
+				end
 			end
 		end
 		BAD_SSD: begin
@@ -293,8 +297,10 @@ end
 			if (aligned[4:0] == `CODE_K) begin
 				state_next = START_K;
 				valid_next = 1;
-			end else
+			end else begin
 				`BAD_SSD;
+				false_carrier_next = indicate;
+			end
 
 			if (!indicate)
 				state_next = START_J;
@@ -371,6 +377,7 @@ end
 		rx <= rx_next;
 		state <= state_next;
 		ce <= ce_next;
+		false_carrier <= false_carrier_next;
 		if (ce_next) begin
 			data <= data_next;
 			valid <= valid_next;

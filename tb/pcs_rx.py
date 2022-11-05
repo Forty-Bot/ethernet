@@ -22,20 +22,28 @@ def frame(data):
     return itertools.chain(
         (Code('J'), Code('K')),
         # Chop off the SSD
-        as_codes(data[2:]),
+        as_codes(itertools.islice(data, 2, None)),
         (Code('T'), Code('R')),
     )
 
-async def mii_recv_packet(pcs):
-    while not (pcs.ce.value and pcs.valid.value):
+async def mii_recv_packet(pcs, signals=None):
+    if signals is None:
+        signals = {
+            'ce': pcs.ce,
+            'err': pcs.err,
+            'data': pcs.data,
+            'valid': pcs.valid,
+        }
+
+    while not (signals['ce'].value and signals['valid'].value):
         await RisingEdge(pcs.clk)
 
-    while pcs.valid.value:
-        if pcs.ce.value:
-            if pcs.err.value:
+    while signals['valid'].value:
+        if signals['ce'].value:
+            if signals['err'].value:
                 yield None
             else:
-                yield pcs.data.value
+                yield signals['data'].value
         await RisingEdge(pcs.clk)
 
 async def pcs_send_codes(pcs, codes, valids):
@@ -68,11 +76,14 @@ async def test_rx(pcs, valids):
 
     assert packet == await alist(mii_recv_packet(pcs))
 
+    false_carriers = 0
     for _ in range(3):
         while not (pcs.rx.value and pcs.err.value and pcs.ce.value):
             await RisingEdge(pcs.clk)
+            false_carriers += pcs.false_carrier.value
         assert pcs.data.value == 0xE
         await FallingEdge(pcs.rx)
+    assert false_carriers == 3
 
     assert [0x5, 0x5, None] == await alist(mii_recv_packet(pcs))
 
