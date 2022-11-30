@@ -90,8 +90,20 @@ endef
 %.place.fst: rtl/%.place.vvp rtl/%.sdf tb/%.py FORCE
 	$(run-vvp)
 
-MODULES := pcs_rx pcs_tx pmd_dp83223_rx nrzi_encode nrzi_decode scramble descramble mdio mdio_io
-MODULES += mii_io_rx mii_io_tx mdio_regs phy_core axis_replay_buffer
+MODULES += axis_replay_buffer
+MODULES += descramble
+MODULES += mdio
+MODULES += mdio_io
+MODULES += mdio_regs
+MODULES += mii_io_rx
+MODULES += mii_io_tx
+MODULES += nrzi_decode
+MODULES += nrzi_encode
+MODULES += pcs_rx
+MODULES += pcs_tx
+MODULES += phy_core
+MODULES += pmd_dp83223_rx
+MODULES += scramble
 
 .PHONY: test
 test: $(addsuffix .fst,$(MODULES)) $(addsuffix .synth.fst,$(MODULES))
