@@ -155,12 +155,11 @@ module phy_core (
 	 */
 	always @(*) begin
 		crs = transmitting || receiving;
+		col = transmitting && receiving;
 		if (coltest)
 			col = transmitting;
 		else if (loopback)
 			col = 0;
-		else
-			col = transmitting && receiving;
 	end
 
 endmodule
