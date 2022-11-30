@@ -102,6 +102,7 @@ MODULES += nrzi_encode
 MODULES += pcs_rx
 MODULES += pcs_tx
 MODULES += phy_core
+MODULES += pmd_dp83223
 MODULES += pmd_dp83223_rx
 MODULES += scramble
 
