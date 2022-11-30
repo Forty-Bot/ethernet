@@ -91,7 +91,7 @@ endef
 	$(run-vvp)
 
 MODULES := pcs_rx pcs_tx pmd_dp83223_rx nrzi_encode nrzi_decode scramble descramble mdio mdio_io
-MODULES += mii_io_rx mii_io_tx mdio_regs
+MODULES += mii_io_rx mii_io_tx mdio_regs phy_core axis_replay_buffer
 
 .PHONY: test
 test: $(addsuffix .fst,$(MODULES)) $(addsuffix .synth.fst,$(MODULES))

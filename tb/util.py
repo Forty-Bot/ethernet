@@ -140,8 +140,20 @@ def compare_lists(ins, outs):
 
 async def ClockEnable(clk, ce, ratio):
     ce.value = 1
+    if ratio == 1:
+        return
+
     while True:
         await ClockCycles(clk, 1, False)
         ce.value = 0
         await ClockCycles(clk, ratio - 1, False)
         ce.value = 1
+
+# Adapted from https://stackoverflow.com/a/1630350/5086505
+def lookahead(it):
+    it = iter(it)
+    last = next(it)
+    for val in it:
+        yield last, False
+        last = val
+    yield last, True
