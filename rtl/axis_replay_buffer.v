@@ -9,8 +9,8 @@
  * replayable will remain true until BUF_SIZE + 1 handshakes have occured
  * without a replay. In particular, it is possible to restart a packet 
  * even after a handshake with m_axis_last set. To support this late replay
- * feature, done must be asserted when the consumer is does not wish to
- * perform any more replays.
+ * feature, done must be asserted when the consumer does not wish to perform
+ * any more replays.
  *
  * In general, this buffer will add two cycles of latency. Additionally, there
  * will may some latency when replayable goes low. This is because the slave
@@ -67,8 +67,7 @@ module axis_replay_buffer (
 	reg m_axis_valid_next, m_axis_last_next;
 	reg sent_last, sent_last_next;
 	reg [DATA_WIDTH - 1:0] buffer [(2 ** BUF_WIDTH) - 1:0];
-	reg [BUF_WIDTH:0] m_ptr, m_ptr_next, s_ptr, s_ptr_next;
-	reg [BUF_WIDTH - 1:0] last_ptr, last_ptr_next;
+	reg [BUF_WIDTH:0] m_ptr, m_ptr_next, s_ptr, s_ptr_next, last_ptr, last_ptr_next;
 	reg [DATA_WIDTH - 1:0] s_data, m_data;
 	reg last, last_next;
 	reg full, empty, replayable_next, we, re;
@@ -113,7 +112,7 @@ module axis_replay_buffer (
 
 		/* read the next datum (if it's available)... */
 		m_axis_valid_next = !empty;
-		m_axis_last_next = last && m_ptr[BUF_WIDTH - 1:0] == last_ptr;
+		m_axis_last_next = last && m_ptr == last_ptr;
 		re = !empty;
 		m_ptr_next = m_ptr + !empty;
 		/* ...except if we need to stall */
@@ -123,7 +122,6 @@ module axis_replay_buffer (
 			re = 0;
 			m_ptr_next = m_ptr;
 		end
-
 
 		replayable_next = replayable;
 		sent_last_next = sent_last;
