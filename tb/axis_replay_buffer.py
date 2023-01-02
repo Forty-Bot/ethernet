@@ -10,7 +10,7 @@ from .util import ClockEnable, lookahead, timeout
 
 BUF_SIZE = 54
 
-@timeout(15, 'us')
+@timeout(30, 'us')
 async def test_replay(buf, in_ratio, out_ratio):
     buf.s_axis_valid.value = 0
     buf.s_axis_last.value = 0
@@ -81,6 +81,6 @@ async def test_replay(buf, in_ratio, out_ratio):
         await recv(packet)
 
 replay_tests = TestFactory(test_replay)
-replay_tests.add_option('in_ratio', (1, 2))
-replay_tests.add_option('out_ratio', (1, 2))
+replay_tests.add_option('in_ratio', (1, 4))
+replay_tests.add_option('out_ratio', (1, 4))
 replay_tests.generate_tests()

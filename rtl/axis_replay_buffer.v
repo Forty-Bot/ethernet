@@ -67,10 +67,10 @@ module axis_replay_buffer (
 	reg m_axis_valid_next, m_axis_last_next;
 	reg sent_last, sent_last_next;
 	reg [DATA_WIDTH - 1:0] buffer [(2 ** BUF_WIDTH) - 1:0];
-	reg [BUF_WIDTH:0] m_ptr, m_ptr_next, s_ptr, s_ptr_next, last_ptr, last_ptr_next;
-	reg [DATA_WIDTH - 1:0] s_data, m_data;
+	reg [BUF_WIDTH:0] m_ptr, m_ptr_next, s_ptr, s_ptr_next, last_ptr,
+			  last_ptr_next, max_s_ptr;
 	reg last, last_next;
-	reg full, empty, replayable_next, we, re;
+	reg full, full_next, empty, replayable_next, we, re;
 
 	initial begin
 		m_ptr = 0;
@@ -86,9 +86,6 @@ module axis_replay_buffer (
 	end
 
 	always @(*) begin
-		empty = s_ptr == m_ptr;
-		full = s_ptr == { ~m_ptr[BUF_WIDTH], m_ptr[BUF_WIDTH - 1:0] };
-
 		we = 0;
 		s_ptr_next = s_ptr;
 		last_next = last;
@@ -102,10 +99,16 @@ module axis_replay_buffer (
 			end
 		end
 
+		empty = s_ptr == m_ptr;
+		max_s_ptr = { ~m_ptr[BUF_WIDTH], m_ptr[BUF_WIDTH - 1:0] };
+		full = s_ptr == max_s_ptr;
+		/* Value of full assuming no movement on the master interface */
+		full_next = s_ptr_next == max_s_ptr;
+
 		if (replayable)
 			s_axis_ready_next = &s_ptr[BUF_WIDTH - 1:0] == s_ptr[BUF_WIDTH];
 		else
-			s_axis_ready_next = !full;
+			s_axis_ready_next = !full_next;
 
 		if (last_next)
 			s_axis_ready_next = 0;
