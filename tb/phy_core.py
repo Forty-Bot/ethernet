@@ -142,17 +142,21 @@ async def test_transfer(phy):
 
     async def count_crs():
         nonlocal crs
+        last_crs = 0
         while True:
-            await RisingEdge(phy.crs)
-            crs += 1
-            await FallingEdge(phy.crs)
+            await RisingEdge(phy.clk)
+            if phy.crs.value and not last_crs:
+                crs += 1
+            last_crs = phy.crs.value
 
     async def count_col():
         nonlocal col
+        last_col = 0
         while True:
-            await RisingEdge(phy.col)
-            col += 1
-            await FallingEdge(phy.col)
+            await RisingEdge(phy.clk)
+            if phy.col.value and not last_col:
+                col += 1
+            last_col = phy.col.value
 
     await cocotb.start(count_crs())
     await cocotb.start(count_col())
