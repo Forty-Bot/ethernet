@@ -26,6 +26,36 @@ def mindelays(count):
 def maxdelays(count):
     return (8100,) * count
 
+async def check_bits(pmd, ins):
+    # Wait for things to stabilize
+    await RisingEdge(pmd.signal_status)
+    outs = []
+    while pmd.signal_status.value:
+        await RisingEdge(pmd.clk_125)
+        valid = pmd.rx_data_valid.value
+        if valid == 0:
+            pass
+        elif valid == 1:
+            outs.append(pmd.rx_data[1].value)
+        else:
+            outs.append(pmd.rx_data[1].value)
+            outs.append(pmd.rx_data[0].value)
+
+    best_corr = -1
+    best_off = None
+    for off in range(16):
+        corr = sum(i == o for i, o in zip(ins[off:], outs))
+        if corr > best_corr:
+            best_corr = corr
+            best_off = off
+
+    print(f"best offset is {best_off} correlation {best_corr/(len(ins) - best_off)}")
+    compare_lists(ins[best_off:], outs)
+    # There will be a few bits at the end not recorded because signal_detect
+    # isn't delayed like the data signals
+    print(best_corr, len(ins), best_off)
+    assert best_corr > len(ins) - best_off - 10
+
 @timeout(100, 'us')
 async def test_rx(pmd, delays):
     pmd.signal_detect.value = 0
@@ -63,36 +93,9 @@ async def test_rx(pmd, delays):
                 pass
             await Timer(delay, units='ps')
         pmd.signal_detect.value = 0
+
     await cocotb.start(generate_bits())
-
-    # Wait for things to stabilize
-    await RisingEdge(pmd.signal_status)
-    outs = []
-    while pmd.signal_status.value:
-        await RisingEdge(pmd.clk_125)
-        valid = pmd.rx_data_valid.value
-        if valid == 0:
-            pass
-        elif valid == 1:
-            outs.append(pmd.rx_data[1].value)
-        else:
-            outs.append(pmd.rx_data[1].value)
-            outs.append(pmd.rx_data[0].value)
-
-    best_corr = -1
-    best_off = None
-    for off in range(16):
-        corr = sum(i == o for i, o in zip(ins[off:], outs))
-        if corr > best_corr:
-            best_corr = corr
-            best_off = off
-
-    print(f"best offset is {best_off} correlation {best_corr/(len(ins) - best_off)}")
-    compare_lists(ins[best_off:], outs)
-    # There will be a few bits at the end not recorded because signal_detect
-    # isn't delayed like the data signals
-    print(best_corr, len(ins), best_off)
-    assert best_corr > len(ins) - best_off - 10
+    await check_bits(pmd, ins)
 
 rx_tests = TestFactory(test_rx)
 rx_tests.add_option('delays', (random_delays, mindelays, maxdelays))
