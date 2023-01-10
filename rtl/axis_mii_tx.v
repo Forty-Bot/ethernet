@@ -138,7 +138,6 @@ module axis_mii_tx (
 
 	reg [7:0] data, data_next;
 	reg [31:0] crc_state, crc_state_next, crc_state_out;
-	initial crc_state = CRC_INIT;
 
 	lfsr #(
 		.LFSR_WIDTH(32),
@@ -196,9 +195,7 @@ module axis_mii_tx (
 		mii_tx_ce_next_next = 0;
 		mii_tx_en = 0;
 		mii_txd = 0;
-		do_crc = 0;
 		odd = 0;
-		collision = 0;
 		state = IPG_EARLY;
 		state_counter = IPG_EARLY_BYTES - 1;
 		retries = MAX_RETRIES - 1;
