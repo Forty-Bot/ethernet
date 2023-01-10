@@ -28,6 +28,7 @@ module pmd_dp83223_rx (
 
 	reg [1:0] rx_p, rx_n;
 	reg [4:0] sd_delay;
+	initial sd_delay[4:1] = 4'b0;
 
 `ifdef SYNTHESIS
 	SB_IO #(
@@ -47,6 +48,7 @@ module pmd_dp83223_rx (
 		.D_IN_1(rx_n[0])
 	);
 `else
+	initial sd_delay[0] = 0;
 	always @(posedge clk_125)
 		sd_delay[0] <= signal_detect;
 
@@ -189,7 +191,7 @@ module pmd_dp83223_rx (
 
 `ifndef SYNTHESIS
 	reg [255:0] state_text;
-	input [13:0] delay;
+	wire [13:0] delay;
 
 	always @(*) begin
 		case (state)
