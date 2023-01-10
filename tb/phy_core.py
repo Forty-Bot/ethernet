@@ -9,8 +9,6 @@ from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, Event, FallingEdge, RisingEdge, Timer
 from cocotb.types import LogicArray
 
-from .nrzi_encode import nrzi_encode
-from .nrzi_decode import nrzi_decode
 from .scramble import descramble
 from .descramble import scramble
 from .pcs_tx import as_nibbles, mii_send_packet, pcs_recv_packet
