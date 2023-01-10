@@ -18,8 +18,13 @@ FORCE:
 log:
 	mkdir $@
 
+LIBDIRS := rtl lib/verilog-lfsr/rtl
 %.synth.json: %.v | log
-	$(SYNTH) -q -E $@.d -p "synth_ice40 -top $(*F)" -b json -o $@ -f verilog $< -l log/$(*F).synth
+	( \
+		echo "read_verilog -sv $<"; \
+		echo "hierarchy $(addprefix -libdir ,$(LIBDIRS) $(<D))"; \
+		echo "synth_ice40 -top $(*F)"; \
+	) | $(SYNTH) -q -E $@.d -s /dev/stdin -b json -o $@ -l log/$(*F).synth
 
 define run-jsontov =
 	( grep timescale $*.v; $(SYNTH) -q -p "write_verilog -defparam -noattr" -f json $< ) > $@
@@ -36,7 +41,8 @@ IFLAGS := -g2012 -gspecify -Wall -Wno-timescale
 EXTRA_V := rtl/iverilog_dump.v
 
 define run-icarus =
-$(ICARUS) $(IFLAGS) -I$(<D) -y$(<D) -M$@.pre -DTOP=$(TOP) -s $(TOP) -s iverilog_dump -o $@ $< $(EXTRA_V) && \
+$(ICARUS) $(IFLAGS) -I$(<D) $(addprefix -y,$(LIBDIRS) $(<D)) -M$@.pre -DTOP=$(TOP) \
+	-s $(TOP) -s iverilog_dump -o $@ $< $(EXTRA_V) && \
 	( echo -n "$@: " && tr '\n' ' ' ) < $@.pre > $@.d; RET=$$?; rm -f $@.pre; exit $$RET
 endef
 
