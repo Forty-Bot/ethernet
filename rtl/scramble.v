@@ -13,7 +13,7 @@ module scramble (
 
 	reg lfsr_next;
 	reg [10:0] lfsr;
-	initial lfsr = 10'h3ff;
+	initial lfsr = 11'h7ff;
 
 	always @(*) begin
 		lfsr_next = lfsr[8] ^ lfsr[10];
