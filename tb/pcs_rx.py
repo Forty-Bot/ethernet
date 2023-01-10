@@ -40,7 +40,7 @@ async def mii_recv_packet(pcs, signals=None):
 
     while signals['valid'].value:
         if signals['ce'].value:
-            if signals['err'].value:
+            if 'err' in signals and signals['err'].value:
                 yield None
             else:
                 yield signals['data'].value
