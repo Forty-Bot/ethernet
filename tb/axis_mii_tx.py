@@ -225,6 +225,11 @@ async def test_underflow(mac):
         send, status = await start(mac, [*range(x), None])
         await underflow(mac, send, status)
 
+        # Error on last byte valid for one cycle
+        send, status = await start(mac, [*range(x), None],
+                                   last_extra=(12 + 8 + x) * 10 - x + 5)
+        await underflow(mac, send, status)
+
         # Error with more to come
         send, status = await start(mac, [*range(x), None, 1])
         await underflow(mac, send, status)
