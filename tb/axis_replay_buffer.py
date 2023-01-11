@@ -34,6 +34,7 @@ async def send_packet(signals, packet, ratio=1):
 
 @timeout(30, 'us')
 async def test_replay(buf, in_ratio, out_ratio):
+    buf.rst.value = 1
     buf.s_axis_valid.value = 0
     buf.s_axis_last.value = 0
     buf.m_axis_ready.value = 1
@@ -41,6 +42,7 @@ async def test_replay(buf, in_ratio, out_ratio):
     buf.done.value = 0
 
     await Timer(1)
+    buf.rst.value = 0
     await cocotb.start(Clock(buf.clk, 8, units='ns').start())
     await FallingEdge(buf.clk)
     await cocotb.start(ClockEnable(buf.clk, buf.m_axis_ready, out_ratio))

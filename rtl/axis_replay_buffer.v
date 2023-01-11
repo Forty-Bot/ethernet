@@ -25,7 +25,7 @@
 `include "common.vh"
 
 module axis_replay_buffer (
-	input clk,
+	input clk, rst,
 
 	/* AXI Stream slave */
 	input [DATA_WIDTH - 1:0] s_axis_data,
@@ -71,19 +71,6 @@ module axis_replay_buffer (
 			  last_ptr_next, max_s_ptr;
 	reg last, last_next;
 	reg full, full_next, empty, replayable_next, we, re;
-
-	initial begin
-		m_ptr = 0;
-		s_ptr = 0;
-		last = 0;
-		replayable = 1;
-		s_axis_valid_last = 0;
-		s_axis_last_last = 0;
-		s_axis_ready = 1;
-		m_axis_valid = 0;
-		m_axis_last = 0;
-		sent_last = 0;
-	end
 
 	always @(*) begin
 		we = 0;
@@ -157,19 +144,34 @@ module axis_replay_buffer (
 			buffer[s_ptr[BUF_WIDTH - 1:0]] <= { s_axis_data_last };
 		if (re)
 			{ m_axis_data } <= buffer[m_ptr[BUF_WIDTH - 1:0]];
+	end
 
-		s_axis_data_last <= s_axis_data;
-		s_axis_valid_last <= s_axis_valid;
-		s_axis_last_last <= s_axis_last;
-		s_axis_ready <= s_axis_ready_next;
-		m_axis_last <= m_axis_last_next;
-		m_axis_valid <= m_axis_valid_next;
-		sent_last <= sent_last_next;
-		m_ptr <= m_ptr_next;
-		s_ptr <= s_ptr_next;
-		last <= last_next;
-		last_ptr <= last_ptr_next;
-		replayable <= replayable_next;
+	always @(posedge clk, posedge rst) begin
+		if (rst) begin
+			m_ptr <= 0;
+			s_ptr <= 0;
+			last <= 0;
+			replayable <= 1;
+			s_axis_valid_last <= 0;
+			s_axis_last_last <= 0;
+			s_axis_ready <= 1;
+			m_axis_valid <= 0;
+			m_axis_last <= 0;
+			sent_last <= 0;
+		end else begin
+			s_axis_data_last <= s_axis_data;
+			s_axis_valid_last <= s_axis_valid;
+			s_axis_last_last <= s_axis_last;
+			s_axis_ready <= s_axis_ready_next;
+			m_axis_last <= m_axis_last_next;
+			m_axis_valid <= m_axis_valid_next;
+			sent_last <= sent_last_next;
+			m_ptr <= m_ptr_next;
+			s_ptr <= s_ptr_next;
+			last <= last_next;
+			last_ptr <= last_ptr_next;
+			replayable <= replayable_next;
+		end
 	end
 
 `ifndef SYNTHESIS

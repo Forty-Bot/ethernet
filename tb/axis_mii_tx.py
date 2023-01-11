@@ -21,13 +21,16 @@ import os
 skip_slow = not os.environ.get('RUN_SLOW', False)
 
 async def init(mac):
+    mac.rst.value = 1
     mac.mii_col.value = 0
     mac.mii_crs.value = 0
     mac.axis_valid.value = 0
     mac.axis_err.value = 0
     mac.short_backoff.value = 1
     await Timer(1)
+    mac.rst.value = 0
     await cocotb.start(Clock(mac.clk, 8, units='ns').start())
+    await FallingEdge(mac.clk)
 
 def send_packet(mac, packet, ratio=1):
     return axis_replay_buffer.send_packet({
