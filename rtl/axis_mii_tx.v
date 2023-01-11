@@ -182,7 +182,7 @@ module axis_mii_tx (
 	reg [5:0] state_counter, state_counter_next;
 	reg [9:0] lfsr, lfsr_next, backoff, backoff_next;
 	reg transmit_ok_next, gave_up_next, late_collision_next;
-	reg underflow_next;
+	reg underflow_next, err, err_next;
 
 	always @(*) begin
 		mii_tx_ce_next_next_next = 0;
@@ -222,6 +222,10 @@ module axis_mii_tx (
 			do_state = 1;
 			state_counter_next = state_counter - 1;
 		end
+
+		err_next = 0;
+		if (buf_ready && buf_valid && buf_err)
+			err_next = 1;
 
 		transmit_ok_next = 0;
 		gave_up_next = 0;
@@ -319,18 +323,13 @@ module axis_mii_tx (
 				end
 				endcase
 
-				if (!buf_valid || buf_err) begin
-					if (buf_valid && buf_last)
+				if (!buf_valid) begin
+					if (buf_last)
 						state_next = JAM_FAIL;
 					else
 						state_next = JAM_DRAIN;
 
-					/*
-					 * Start jamming immediately to avoid
-					 * sending Xs
-					 */
-					state_counter_next = JAM_BYTES - 2;
-					data_next = DATA_JAM;
+					state_counter_next = JAM_BYTES - 1;
 					underflow_next = 1;
 					if (state == DATA_EARLY)
 						done_next = 1;
@@ -350,6 +349,14 @@ module axis_mii_tx (
 					end
 					state_counter_next = JAM_BYTES - 1;
 				end
+			end
+
+			if (err) begin
+				state_next = JAM_DRAIN;
+				state_counter_next = JAM_BYTES - 1;
+				underflow_next = 1;
+				if (state == DATA_EARLY)
+					done_next = 1;
 			end
 		end
 		PAD_EARLY,
@@ -378,6 +385,14 @@ module axis_mii_tx (
 					end
 				end
 			end
+
+			if (err) begin
+				state_next = JAM_FAIL;
+				state_counter_next = JAM_BYTES - 1;
+				underflow_next = 1;
+				if (state == PAD_EARLY)
+					done_next = 1;
+			end
 		end
 		FCS: begin
 			if (do_state) begin
@@ -397,6 +412,12 @@ module axis_mii_tx (
 					late_collision_next = 1;
 					transmit_ok_next = 0;
 				end
+			end
+
+			if (err) begin
+				state_next = JAM_FAIL;
+				state_counter_next = JAM_BYTES - 1;
+				underflow_next = 1;
 			end
 		end
 		IPG_OR_JAM: begin
@@ -499,6 +520,7 @@ module axis_mii_tx (
 			late_collision <= 0;
 			underflow <= 0;
 			buf_ready <= 0;
+			err <= 0;
 			done <= 0;
 			replay <= 0;
 		end else begin
@@ -513,6 +535,7 @@ module axis_mii_tx (
 			state <= state_next;
 			state_counter <= state_counter_next;
 			buf_ready <= buf_ready_next;
+			err <= err_next;
 			data <= data_next;
 			replay <= replay_next;
 			done <= done_next;
