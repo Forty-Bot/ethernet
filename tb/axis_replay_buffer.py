@@ -10,8 +10,10 @@ from .util import ClockEnable, lookahead, timeout
 
 BUF_SIZE = 54
 
-async def send_packet(signals, packet, ratio=1):
+async def send_packet(signals, packet, ratio=1, last_extra=0):
     for val, last in lookahead(packet):
+        if last and last_extra:
+            await ClockCycles(signals['clk'], last_extra, rising=False)
         if 'err' in signals:
             if val is None:
                 signals['data'].value = 0
