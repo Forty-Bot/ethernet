@@ -230,7 +230,7 @@ async def test_underflow(mac):
         await underflow(mac, send, status)
 
         # Underflow with collision
-        send, status = await start(mac, [*range(x), None])
+        send, status = await start(mac, [*range(x), None], last_extra=(12 + 8 + x) * 10)
         await restart(mac, (8 + x) * BYTE_TIME_NS - 1)
         if x <= 56:
             await underflow(mac, send, status)
