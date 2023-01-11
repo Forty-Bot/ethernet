@@ -32,7 +32,7 @@ async def init(mac):
     await cocotb.start(Clock(mac.clk, 8, units='ns').start())
     await FallingEdge(mac.clk)
 
-def send_packet(mac, packet, ratio=1):
+def send_packet(mac, packet, **kwargs):
     return axis_replay_buffer.send_packet({
         'clk': mac.clk,
         'data': mac.axis_data,
@@ -40,7 +40,7 @@ def send_packet(mac, packet, ratio=1):
         'valid': mac.axis_valid,
         'last': mac.axis_last,
         'ready': mac.axis_ready,
-    }, packet, ratio)
+    }, packet, **kwargs)
 
 class MACError(Exception):
     pass
@@ -133,8 +133,8 @@ async def get_status(mac):
     elif underflow:
         return Status.UNDERFLOW
 
-async def start(mac, packet, ratio=1):
-    send = await cocotb.start(send_packet(mac, packet, ratio))
+async def start(mac, packet, **kwargs):
+    send = await cocotb.start(send_packet(mac, packet, **kwargs))
     status = await cocotb.start(get_status(mac))
     return send, status
 
@@ -182,7 +182,7 @@ async def test_send(mac, ratio):
 
     async def send_packets():
         for packet in packets:
-            await send_packet(mac, packet, ratio)
+            await send_packet(mac, packet, ratio=ratio)
 
     await cocotb.start(send_packets())
     for i, packet in enumerate(packets):
@@ -213,7 +213,7 @@ async def test_underflow(mac):
         await send.join()
         assert await status.join() == Status.UNDERFLOW
 
-    send, status = await start(mac, range(32), 30)
+    send, status = await start(mac, range(32), ratio=30)
     await underflow(mac, send, status)
 
     send, status = await start(mac, [*range(56), None])
