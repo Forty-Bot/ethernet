@@ -197,8 +197,20 @@ module axis_mii_tx (
 		if (do_crc)
 			crc_state_next = crc_state_out;
 
-		backoff_next = backoff;
 		lfsr_next = { lfsr[8:0], lfsr[9] ^ lfsr[6] };
+		case (retries)
+		15: backoff_next = lfsr[  0];
+		14: backoff_next = lfsr[1:0];
+		13: backoff_next = lfsr[2:0];
+		12: backoff_next = lfsr[3:0];
+		11: backoff_next = lfsr[4:0];
+		10: backoff_next = lfsr[5:0];
+		 9: backoff_next = lfsr[6:0];
+		 8: backoff_next = lfsr[7:0];
+		 7: backoff_next = lfsr[8:0];
+		 6, 5, 4, 3, 2, 1, 0:
+		    backoff_next = lfsr[9:0];
+		endcase
 
 		odd_next = odd ^ mii_tx_ce_next;
 		mii_tx_en_next = mii_tx_en;
@@ -421,19 +433,6 @@ module axis_mii_tx (
 					state_counter_next = 0;
 					replay_next = 1;
 					retries_next = retries - 1;
-					case (retries)
-					15: backoff_next = lfsr[  0];
-					14: backoff_next = lfsr[1:0];
-					13: backoff_next = lfsr[2:0];
-					12: backoff_next = lfsr[3:0];
-					11: backoff_next = lfsr[4:0];
-					10: backoff_next = lfsr[5:0];
-					 9: backoff_next = lfsr[6:0];
-					 8: backoff_next = lfsr[7:0];
-					 7: backoff_next = lfsr[8:0];
-					 6, 5, 4, 3, 2, 1, 0:
-					    backoff_next = lfsr[9:0];
-					endcase
 				end else begin
 					state_counter_next = IPG_BYTES - 1;
 					if (state == JAM_FAIL) begin
@@ -462,6 +461,7 @@ module axis_mii_tx (
 				mii_tx_en_next = 0;
 		end
 		BACKOFF: begin
+			backoff_next = backoff;
 			if (mii_tx_ce_next && odd) begin
 				mii_tx_en_next = 0;
 				if (!state_counter) begin
