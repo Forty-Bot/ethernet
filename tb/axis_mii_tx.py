@@ -216,31 +216,27 @@ async def test_underflow(mac):
     send, status = await start(mac, range(32), ratio=30)
     await underflow(mac, send, status)
 
-    send, status = await start(mac, [*range(56), None])
-    await underflow(mac, send, status)
-    send, status = await start(mac, [*range(58), None])
-    await underflow(mac, send, status)
-    send, status = await start(mac, [*range(60), None])
-    await underflow(mac, send, status)
+    #from math import floor
+    # Solution to (IPG + PREAMBLE + x) * BIT_TIME = ratio * x
+    # end = floor(200 / (ratio - 10))
 
-    send, status = await start(mac, [*range(56), None, 1])
-    await underflow(mac, send, status)
-    send, status = await start(mac, [*range(58), None, 1])
-    await underflow(mac, send, status)
-    send, status = await start(mac, [*range(60), None, 1])
-    await underflow(mac, send, status)
+    for x in (56, 58, 60):
+        # Error on last byte
+        send, status = await start(mac, [*range(x), None])
+        await underflow(mac, send, status)
 
-    send, status = await start(mac, [*range(56), None])
-    await restart(mac, (8 + 55) * BYTE_TIME_NS)
-    await underflow(mac, send, status)
-    send, status = await start(mac, [*range(58), None])
-    await restart(mac, (8 + 57) * BYTE_TIME_NS)
-    await send.join()
-    assert await status.join() == Status.LATE_COLLISION
-    send, status = await start(mac, [*range(60), None])
-    await restart(mac, (8 + 59) * BYTE_TIME_NS)
-    await send.join()
-    assert await status.join() == Status.LATE_COLLISION
+        # Error with more to come
+        send, status = await start(mac, [*range(x), None, 1])
+        await underflow(mac, send, status)
+
+        # Underflow with collision
+        send, status = await start(mac, [*range(x), None])
+        await restart(mac, (8 + x) * BYTE_TIME_NS - 1)
+        if x <= 56:
+            await underflow(mac, send, status)
+        else:
+            await send.join()
+            assert await status.join() == Status.LATE_COLLISION
 
 @cocotb.test(timeout_time=1250, timeout_unit='us', skip=skip_slow)
 async def test_backoff(mac):
