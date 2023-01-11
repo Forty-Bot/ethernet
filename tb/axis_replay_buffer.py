@@ -29,7 +29,7 @@ async def send_packet(signals, packet, ratio=1):
             if signals['ready'].value:
                 break
         signals['valid'].value = 0
-        if ratio != 1:
+        if ratio != 1 and not last:
             await ClockCycles(signals['clk'], ratio - 1, rising=False)
 
 @timeout(30, 'us')
