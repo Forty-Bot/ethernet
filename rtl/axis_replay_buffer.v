@@ -144,6 +144,8 @@ module axis_replay_buffer (
 			buffer[s_ptr[BUF_WIDTH - 1:0]] <= { s_axis_data_last };
 		if (re)
 			{ m_axis_data } <= buffer[m_ptr[BUF_WIDTH - 1:0]];
+		last_ptr <= last_ptr_next;
+		s_axis_data_last <= s_axis_data;
 	end
 
 	always @(posedge clk, posedge rst) begin
@@ -159,18 +161,16 @@ module axis_replay_buffer (
 			m_axis_last <= 0;
 			sent_last <= 0;
 		end else begin
-			s_axis_data_last <= s_axis_data;
+			m_ptr <= m_ptr_next;
+			s_ptr <= s_ptr_next;
+			last <= last_next;
+			replayable <= replayable_next;
 			s_axis_valid_last <= s_axis_valid;
 			s_axis_last_last <= s_axis_last;
 			s_axis_ready <= s_axis_ready_next;
 			m_axis_last <= m_axis_last_next;
 			m_axis_valid <= m_axis_valid_next;
 			sent_last <= sent_last_next;
-			m_ptr <= m_ptr_next;
-			s_ptr <= s_ptr_next;
-			last <= last_next;
-			last_ptr <= last_ptr_next;
-			replayable <= replayable_next;
 		end
 	end
 

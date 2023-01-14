@@ -502,6 +502,14 @@ module axis_mii_tx (
 		endcase
 	end
 
+	always @(posedge clk) begin
+		do_crc <= do_crc_next;
+		data <= data_next;
+		backoff <= backoff_next;
+		crc_state <= crc_state_next;
+		collision <= collision_next;
+	end
+
 	always @(posedge clk, posedge rst) begin
 		if (rst) begin
 			mii_tx_counter <= MII_100_RATIO;
@@ -524,30 +532,25 @@ module axis_mii_tx (
 			done <= 0;
 			replay <= 0;
 		end else begin
+			mii_tx_counter <= mii_tx_counter_next;
 			mii_tx_ce <= mii_tx_ce_next;
 			mii_tx_ce_next <= mii_tx_ce_next_next;
 			mii_tx_ce_next_next <= mii_tx_ce_next_next_next;
-			mii_tx_counter <= mii_tx_counter_next;
 			mii_tx_en <= mii_tx_en_next;
 			mii_txd <= odd_next ? data_next[7:4] : data_next[3:0];
-			do_crc <= do_crc_next;
 			odd <= odd_next;
 			state <= state_next;
 			state_counter <= state_counter_next;
-			buf_ready <= buf_ready_next;
-			err <= err_next;
-			data <= data_next;
-			replay <= replay_next;
-			done <= done_next;
 			retries <= retries_next;
-			backoff <= backoff_next;
 			lfsr <= lfsr_next;
-			crc_state <= crc_state_next;
-			collision <= collision_next;
 			transmit_ok <= transmit_ok_next;
 			gave_up <= gave_up_next;
 			late_collision <= late_collision_next;
 			underflow <= underflow_next;
+			buf_ready <= buf_ready_next;
+			err <= err_next;
+			done <= done_next;
+			replay <= replay_next;
 		end
 	end
 
