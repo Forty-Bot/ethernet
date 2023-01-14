@@ -505,6 +505,7 @@ module axis_mii_tx (
 	always @(posedge clk) begin
 		do_crc <= do_crc_next;
 		data <= data_next;
+		mii_txd <= odd_next ? data_next[7:4] : data_next[3:0];
 		backoff <= backoff_next;
 		crc_state <= crc_state_next;
 		collision <= collision_next;
@@ -517,7 +518,6 @@ module axis_mii_tx (
 			mii_tx_ce_next <= 0;
 			mii_tx_ce_next_next <= 0;
 			mii_tx_en <= 0;
-			mii_txd <= 0;
 			odd <= 0;
 			state <= IPG_EARLY;
 			state_counter <= IPG_EARLY_BYTES - 1;
@@ -537,7 +537,6 @@ module axis_mii_tx (
 			mii_tx_ce_next <= mii_tx_ce_next_next;
 			mii_tx_ce_next_next <= mii_tx_ce_next_next_next;
 			mii_tx_en <= mii_tx_en_next;
-			mii_txd <= odd_next ? data_next[7:4] : data_next[3:0];
 			odd <= odd_next;
 			state <= state_next;
 			state_counter <= state_counter_next;
