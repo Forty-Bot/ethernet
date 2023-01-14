@@ -6,10 +6,10 @@ import random
 import zlib
 
 import cocotb
+from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.regression import TestFactory
 from cocotb.triggers import ClockCycles, Edge, FallingEdge, First, RisingEdge, Timer
-from cocotb.types import LogicArray
 from cocotb.utils import get_sim_time
 
 from . import axis_replay_buffer
@@ -21,6 +21,7 @@ import os
 skip_slow = not os.environ.get('RUN_SLOW', False)
 
 async def init(mac):
+    mac.clk.value = BinaryValue('Z')
     mac.rst.value = 1
     mac.mii_col.value = 0
     mac.mii_crs.value = 0

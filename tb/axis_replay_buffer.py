@@ -2,6 +2,7 @@
 # Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
 
 import cocotb
+from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.regression import TestFactory
 from cocotb.triggers import ClockCycles, FallingEdge, RisingEdge, Timer
@@ -36,6 +37,7 @@ async def send_packet(signals, packet, ratio=1, last_extra=0):
 
 @timeout(30, 'us')
 async def test_replay(buf, in_ratio, out_ratio):
+    buf.clk.value = BinaryValue('Z')
     buf.rst.value = 1
     buf.s_axis_valid.value = 0
     buf.s_axis_last.value = 0
