@@ -37,6 +37,8 @@ module axis_mii_tx (
 
 	/* Use a slot time of one octet for backoff; test purposes only */
 	input short_backoff,
+	/* Enable Half-Duplex */
+	input half_duplex,
 
 	/* Clause 4 TransmitStatus */
 	output reg transmit_ok,
@@ -237,7 +239,7 @@ module axis_mii_tx (
 		replay_next = 0;
 		done_next = 0;
 		retries_next = retries;
-		collision_next = collision || mii_col;
+		collision_next = collision || (half_duplex && mii_col);
 		case (state)
 		IPG_EARLY: begin
 			collision_next = 0;
@@ -262,7 +264,7 @@ module axis_mii_tx (
 				if (buf_valid) begin
 					state_next = PREAMBLE;
 					state_counter_next = PREAMBLE_BYTES - 1;
-				end else if (mii_crs) begin
+				end else if (half_duplex && mii_crs) begin
 					state_next = IPG_EARLY;
 					state_counter_next = IPG_EARLY_BYTES - 1;
 				end
@@ -472,8 +474,13 @@ module axis_mii_tx (
 		end
 		DRAIN: begin
 			if (buf_ready && buf_valid && buf_last) begin
-				state_next = IPG_EARLY;
-				state_counter_next = IPG_EARLY_BYTES - 1;
+				if (half_duplex) begin
+					state_next = IPG_EARLY;
+					state_counter_next = IPG_EARLY_BYTES - 1;
+				end else begin
+					state_next = IPG_LATE;
+					state_counter_next = IPG_BYTES - 1;
+				end
 			end else begin
 				buf_ready_next = 1;
 			end

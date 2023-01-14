@@ -28,6 +28,7 @@ async def init(mac):
     mac.axis_valid.value = 0
     mac.axis_err.value = 0
     mac.short_backoff.value = 1
+    mac.half_duplex.value = 1
     await Timer(1)
     mac.rst.value = 0
     await cocotb.start(Clock(mac.clk, 8, units='ns').start())
@@ -325,3 +326,20 @@ async def test_collision(mac):
     await late(mac, packet, 64 * BYTE_TIME_NS)
     await late(mac, packet, randtime(64, 256))
     await late(mac, packet, 72 * BYTE_TIME_NS - 1)
+
+@cocotb.test(timeout_time=10, timeout_unit='us')
+async def test_full_duplex(mac):
+    await init(mac)
+    mac.half_duplex.value = 0
+
+    # Skip to the end of IPG_LATE
+    await Timer(13 * BYTE_TIME_NS, 'ns')
+    mac.mii_crs.value = 1
+    packet = list(range(32))
+    send, status = await start(mac, packet)
+    recv = await cocotb.start(ok(mac, packet, status, 16 * BYTE_TIME_NS))
+    # No deferral
+    await Timer(13 * BYTE_TIME_NS, 'ns')
+    assert mac.mii_tx_en.value
+    # No collision
+    await recv
