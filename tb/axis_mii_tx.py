@@ -10,7 +10,7 @@ from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.regression import TestFactory
 from cocotb.triggers import ClockCycles, Edge, FallingEdge, First, RisingEdge, Timer
-from cocotb.utils import get_sim_time
+from cocotb.utils import get_sim_time, get_sim_steps
 
 from . import axis_replay_buffer
 from .pcs_rx import mii_recv_packet
@@ -191,12 +191,12 @@ async def test_send(mac, ratio):
         recv = await cocotb.start(recv_packet(mac))
 
         # Measure the IPG to ensure throughput
-        start = get_sim_time('ns')
+        start = get_sim_time('step')
         while not mac.mii_tx_en.value:
             await RisingEdge(mac.clk)
         # The first IPG may not be exact
         if i:
-            assert get_sim_time('ns') - start == 12 * 80 - 4
+            assert get_sim_time('step') - start == get_sim_steps(12 * 80 - 4, 'ns')
 
         compare(await recv.join(), packet)
         assert await status.join() == Status.OK
@@ -254,9 +254,10 @@ async def test_backoff(mac):
         then = None
         for n in range(collisions):
             await restart(mac, 0)
-            now = get_sim_time('ns')
+            now = get_sim_time('step')
             if then is not None:
-                assert now - then <= (8 + 4 + 12 + 2 ** min(n, 10)) * BYTE_TIME_NS
+                assert now - then <= \
+                    get_sim_steps((8 + 4 + 12 + 2 ** min(n, 10)) * BYTE_TIME_NS, 'ns')
             then = now
 
         if collisions == 16:
