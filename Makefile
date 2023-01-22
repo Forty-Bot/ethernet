@@ -64,9 +64,24 @@ endef
 %.place.vvp: %.place.v rtl/iverilog_dump.v
 	$(run-icarus)
 
-%.asc %.sdf %.place.json &: %.synth.json | log
-	$(PNR) -q --pcf-allow-unconstrained --freq 125 --hx8k --package ct256 --json $< \
-		--write $*.place.json --sdf $*.sdf --asc $*.asc --log log/$(*F).place
+PNRARGS := --freq 125 --hx8k --package ct256 --pcf-allow-unconstrained --no-promote-globals
+
+define run-pnr =
+	$(PNR) -q $(PNRARGS) --json $< --log log/$(*F).$(LOG_EXT)
+endef
+
+%.sdf %.place.json &: PNRARGS += --write $*.place.json --sdf $*.sdf
+%.sdf %.place.json &: LOG_EXT := place
+%.sdf %.place.json &: %.synth.json | log
+	$(run-pnr)
+
+%.asc: PNRARGS += --pcf $*.pcf --asc $@ -r
+%.asc: LOG_EXT := asc
+%.asc: %.synth.json %.pcf | log
+	$(run-pnr)
+
+%.bin: rtl/%.asc
+	$(ICEPACK) $< $@
 
 -include $(wildcard rtl/*.d)
 
@@ -123,4 +138,4 @@ asc: $(addprefix rtl/,$(addsuffix .asc,$(MODULES)))
 clean:
 	rm -f *.fst
 	rm -rf log
-	cd rtl && rm -f *.json *.asc *.pre *.vvp *.d *.synth.v *.place.v
+	cd rtl && rm -f *.json *.asc *.pre *.vvp *.d *.synth.v *.place.v *.sdf
