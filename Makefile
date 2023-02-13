@@ -116,6 +116,7 @@ MODULES += descramble
 MODULES += mdio
 MODULES += mdio_io
 MODULES += mdio_regs
+MODULES += mii_elastic_buffer
 MODULES += mii_io_rx
 MODULES += mii_io_tx
 MODULES += nrzi_decode
