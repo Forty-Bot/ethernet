@@ -113,6 +113,7 @@ endef
 
 MODULES += axis_replay_buffer
 MODULES += descramble
+MODULES += led_blinker
 MODULES += mdio
 MODULES += mdio_io
 MODULES += mdio_regs
