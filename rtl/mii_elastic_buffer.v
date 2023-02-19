@@ -136,11 +136,9 @@ module mii_elastic_buffer (
 `ifndef SYNTHESIS
 	/* This is the only way to look into a buffer... */
 	genvar j;
-	generate for (j = 0; j < BUF_SIZE; j = j + 1) begin
-		wire tmpv = valid[j];
-		wire tmpe = err[j];
+	generate for (j = 0; j < BUF_SIZE; j = j + 1)
 		wire [3:0] tmpd = data[j];
-	end endgenerate
+	endgenerate
 `endif
 
 endmodule
