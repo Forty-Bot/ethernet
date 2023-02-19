@@ -6,8 +6,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge, Timer
 from cocotb.types import LogicArray
 
-def BIT(n):
-    return 1 << n
+from .util import BIT
 
 BMCR = 0
 BMSR = 1

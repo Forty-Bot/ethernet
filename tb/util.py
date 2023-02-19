@@ -16,6 +16,9 @@ async def async_iter(it):
     for i in it:
         yield i
 
+def BIT(n):
+    return 1 << n
+
 # From https://stackoverflow.com/a/7864317/5086505
 class classproperty(property):
     def __get__(self, cls, owner):
