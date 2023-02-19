@@ -12,10 +12,6 @@ from cocotb.types import LogicArray
 
 PORT_COUNT = 4
 
-class Memory(ModifiableObject):
-    def __init__(self, handle, path):
-        super().__init__(handle, path)
-
 @cocotb.test(timeout_time=100, timeout_unit='ns')
 async def test_hub(hub):
     hub.rx_dv.value = 0
