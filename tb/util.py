@@ -19,6 +19,9 @@ async def async_iter(it):
 def BIT(n):
     return 1 << n
 
+def GENMASK(h, l):
+    return (-1 << l) & ((1 << h + 1) - 1)
+
 # From https://stackoverflow.com/a/7864317/5086505
 class classproperty(property):
     def __get__(self, cls, owner):

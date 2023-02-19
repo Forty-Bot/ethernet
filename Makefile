@@ -127,6 +127,7 @@ MODULES += phy_core
 MODULES += pmd_dp83223
 MODULES += pmd_dp83223_rx
 MODULES += scramble
+MODULES += wb_mux
 
 .PHONY: test
 test: $(addsuffix .fst,$(MODULES)) $(addsuffix .synth.fst,$(MODULES))
