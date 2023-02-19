@@ -74,10 +74,17 @@ endef
 %.sdf %.place.json &: %.synth.json | log
 	$(run-pnr)
 
+PNR_RETRIES := 10
+
 %.asc: PNRARGS += --pcf $*.pcf --asc $@ -r
 %.asc: LOG_EXT := asc
 %.asc: %.synth.json %.pcf | log
-	$(run-pnr)
+	for i in $$(seq $(PNR_RETRIES)); do \
+		if $(run-pnr); then \
+			exit 0; \
+		fi \
+	done; \
+	exit 1
 
 %.bin: rtl/%.asc
 	$(ICEPACK) $< $@
