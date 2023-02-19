@@ -28,6 +28,7 @@ module hub_core (
 	reg jam, activity;
 	reg [PORT_BITS - 1:0] active_port;
 	reg [PORT_COUNT - 1:0] tx_en_next, tx_er_next;
+	(* mem2reg *)
 	reg [3:0] txd_next [PORT_COUNT - 1:0];
 
 	always @(*) begin

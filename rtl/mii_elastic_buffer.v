@@ -47,6 +47,7 @@ module mii_elastic_buffer (
 
 	integer i;
 	reg [BUF_SIZE - 1:0] valid, valid_next, err, err_next;
+	(* mem2reg *)
 	reg [3:0] data [BUF_SIZE - 1:0], data_next [BUF_SIZE - 1:0];
 	reg shift, overflow_next, underflow_next;
 	reg in, in_next, out, out_next, rx_ce_last, rx_dv_last;
