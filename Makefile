@@ -20,11 +20,10 @@ log:
 
 LIBDIRS := rtl lib/verilog-lfsr/rtl
 %.synth.json: %.v | log
-	( \
-		echo "read_verilog -sv $<"; \
-		echo "hierarchy $(addprefix -libdir ,$(LIBDIRS) $(<D))"; \
-		echo "synth_ice40 -top $(*F)"; \
-	) | $(SYNTH) -q -E $@.d -s /dev/stdin -b json -o $@ -l log/$(*F).synth
+	$(SYNTH) -q -E $@.d -b json -o $@ -l log/$(*F).synth \
+		-p "read_verilog -sv $<" \
+		-p "hierarchy $(addprefix -libdir ,$(LIBDIRS) $(<D))" \
+		-p "synth_ice40 -top $(*F)"
 
 define run-jsontov =
 	( grep timescale $*.v; $(SYNTH) -q -p "write_verilog -defparam -noattr" -f json $< ) > $@
