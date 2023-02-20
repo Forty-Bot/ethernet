@@ -30,13 +30,16 @@ module phy_core (
 	output reg crs,
 	output reg col,
 
-	/* Control */
+	/* Control/status */
 	input loopback,
 	input coltest,
 	input link_monitor_test_mode,
 	input descrambler_test_mode,
 	output locked,
-	output reg link_status
+	output reg link_status,
+	output receiving,
+	output reg false_carrier,
+	output reg symbol_error
 );
 
 	wire tx_bits, transmitting;
@@ -135,8 +138,6 @@ module phy_core (
 		link_status <= link_status_next;
 	end
 
-	wire receiving;
-
 	pcs_rx pcs_rx (
 		.clk(clk),
 		.ce(rx_ce),
@@ -150,7 +151,7 @@ module phy_core (
 	);
 
 	/*
-	 * NB: These signals are not required to be in any particular clock
+	 * NB: CRS and COL are not required to be in any particular clock
 	 * domain (not that it matters).
 	 */
 	always @(*) begin
@@ -160,6 +161,15 @@ module phy_core (
 			col = transmitting;
 		else if (loopback)
 			col = 0;
+
+		false_carrier = 0;
+		symbol_error = 0;
+		if (rx_ce && rx_er) begin
+			if (rx_dv)
+				symbol_error = 1;
+			else
+				false_carrier = 1;
+		end
 	end
 
 endmodule

@@ -4,7 +4,6 @@
  */
 
 `include "common.vh"
-`include "io.vh"
 
 module hub_core (
 	input clk,
@@ -16,7 +15,10 @@ module hub_core (
 
 	output reg [PORT_COUNT - 1:0] tx_en,
 	output reg [PORT_COUNT - 1:0] tx_er,
-	output reg [PORT_COUNT * 4 - 1:0] txd
+	output reg [PORT_COUNT * 4 - 1:0] txd,
+
+	/* Status; combinatorial! */
+	output reg jam, activity
 );
 
 	parameter PORT_COUNT	= 4;
@@ -25,7 +27,6 @@ module hub_core (
 	localparam DATA_JAM	= 4'h5;
 
 	integer i;
-	reg jam, activity;
 	reg [PORT_BITS - 1:0] active_port;
 	reg [PORT_COUNT - 1:0] tx_en_next, tx_er_next;
 	(* mem2reg *)
