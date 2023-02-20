@@ -144,7 +144,7 @@ test: $(addsuffix .fst,$(MODULES)) $(addsuffix .synth.fst,$(MODULES))
 .PHONY: asc
 asc: $(addprefix rtl/,$(addsuffix .asc,$(MODULES)))
 
-CLEAN_EXT := .json .asc .pre .vvp .d .synth.v .place.v .sdf
+CLEAN_EXT := .json .asc .pre .vvp .d .synth.v .place.v .sdf .bin
 
 .PHONY: clean
 clean:
