@@ -28,17 +28,9 @@ module pmd_dp83223_rx (
 
 	reg [1:0] rx_p, rx_n;
 	reg [4:0] sd_delay;
-	initial sd_delay[4:1] = 4'b0;
+	initial sd_delay[4:0] = 5'b0;
 
 `ifdef SYNTHESIS
-	SB_IO #(
-		.PIN_TYPE(`PIN_OUTPUT_NEVER | `PIN_INPUT_REGISTERED),
-	) signal_detect_pin (
-		.PACKAGE_PIN(signal_detect),
-		.INPUT_CLK(clk_125),
-		.D_IN_0(sd_delay[0])
-	);
-
 	SB_IO #(
 		.PIN_TYPE(`PIN_OUTPUT_NEVER | `PIN_INPUT_DDR),
 	) rx_data_pin (
@@ -48,10 +40,6 @@ module pmd_dp83223_rx (
 		.D_IN_1(rx_n[0])
 	);
 `else
-	initial sd_delay[0] = 0;
-	always @(posedge clk_125)
-		sd_delay[0] <= signal_detect;
-
 	always @(posedge clk_250)
 		rx_p[0] <= indicate_data;
 
@@ -66,7 +54,7 @@ module pmd_dp83223_rx (
 	 * it helps out during simulation. It also helps avoid metastability.
 	 */
 	always @(posedge clk_125)
-		sd_delay[4:1] <= sd_delay[3:0];
+		sd_delay[4:0] <= { sd_delay[3:0], signal_detect };
 
 	assign signal_status = sd_delay[4];
 
