@@ -18,10 +18,11 @@ FORCE:
 log:
 	mkdir $@
 
+INCDIRS := rtl
 LIBDIRS := rtl lib/verilog-lfsr/rtl
 %.synth.json: %.v | log
 	$(SYNTH) -q -E $@.d -b json -o $@ -l log/$(*F).synth \
-		-p "read_verilog -sv $<" \
+		-p "read_verilog $(addprefix -I ,$(INCDIRS)) -sv $<" \
 		-p "hierarchy $(addprefix -libdir ,$(LIBDIRS) $(<D))" \
 		-p "synth_ice40 -top $(*F)"
 
@@ -86,7 +87,7 @@ PNR_RETRIES := 10
 	done; \
 	exit 1
 
-%.bin: rtl/%.asc
+%.bin: %.asc
 	$(ICEPACK) $< $@
 
 -include $(wildcard rtl/*.d)
