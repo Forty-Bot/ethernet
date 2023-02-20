@@ -37,6 +37,25 @@ BMSR_EXTCAP = BIT(0)
 VCR_DTEST = BIT(15)
 VCR_LTEST = BIT(14)
 
+async def wb_xfer(signals, addr, data=None):
+    await FallingEdge(signals['clk'])
+    signals['stb'].value = 1
+    signals['addr'].value = addr
+    if data is None:
+        signals['we'].value = 0
+    else:
+        signals['we'].value = 1
+        signals['data_write'].value = data
+
+    await FallingEdge(signals['clk'])
+    assert signals['ack'].value or signals['err'].value
+    signals['stb'].value = 0
+    signals['we'].value = LogicArray('X')
+    signals['addr'].value = LogicArray('X' * 4)
+    signals['data_write'].value = LogicArray('X' * 16)
+    if data is None and signals['ack'].value:
+        return signals['data_read'].value
+
 @cocotb.test(timeout_time=1, timeout_unit='us')
 async def test_mdio(regs):
     regs.cyc.value = 1
@@ -49,24 +68,17 @@ async def test_mdio(regs):
     await Timer(1)
     await cocotb.start(Clock(regs.clk, 8, units='ns').start())
 
-    async def xfer(regad, data=None):
-        await FallingEdge(regs.clk)
-        regs.stb.value = 1
-        regs.addr.value = regad
-        if data is None:
-            regs.we.value = 0
-        else:
-            regs.we.value = 1
-            regs.data_write.value = data
-
-        await FallingEdge(regs.clk)
-        assert regs.ack.value or regs.err.value
-        regs.stb.value = 0
-        regs.we.value = LogicArray('X')
-        regs.addr.value = LogicArray('X' * 4)
-        regs.data_write.value = LogicArray('X' * 16)
-        if data is None and regs.ack.value:
-            return regs.data_read.value
+    def xfer(regad, data=None):
+        return wb_xfer({
+            'clk': regs.clk,
+            'stb': regs.stb,
+            'we': regs.we,
+            'addr': regs.addr,
+            'data_write': regs.data_write,
+            'data_read': regs.data_read,
+            'ack': regs.ack,
+            'err': regs.err,
+        }, regad, data)
 
     async def reg_toggle(reg, bit, signal, ro_mask=0):
         if signal:
