@@ -37,8 +37,11 @@ endef
 %.place.v: %.place.json %.v
 	$(run-jsontov)
 
+IFLAGS := -g2012 -gspecify -Wall
 # Don't warn about including the timescale from common.vh
-IFLAGS := -g2012 -gspecify -Wall -Wno-timescale
+IFLAGS += -Wno-timescale
+# Don't warn about mem2reg sensitivity
+IFLAGS += -Wno-sensitivity-entire-array
 EXTRA_V := rtl/iverilog_dump.v
 
 define run-icarus =
