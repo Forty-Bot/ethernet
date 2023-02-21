@@ -119,8 +119,10 @@ endef
 	$(run-vvp)
 
 MODULES += axis_replay_buffer
+MODULES += axis_mii_tx
 MODULES += descramble
 MODULES += hub
+MODULES += hub_core
 MODULES += led_blinker
 MODULES += mdio
 MODULES += mdio_io
