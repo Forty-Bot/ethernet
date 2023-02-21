@@ -10,7 +10,7 @@ VVP = vvp
 .DELETE_ON_ERROR:
 
 .PHONY: all
-all: rtl/pcs.asc
+all: examples/breakout_hub/top.bin
 
 .PHONY: FORCE
 FORCE:
@@ -152,3 +152,4 @@ clean:
 	rm -f *.fst
 	rm -rf log
 	rm -f $(addprefix rtl/*,$(CLEAN_EXT))
+	rm -f $(addprefix examples/*/*,$(CLEAN_EXT))

@@ -1,0 +1,8 @@
+= Examples
+
+This directory contains example designs showcasing different ways to use the
+cores in this project.
+
+:leveloffset: +1
+
+include::breakout_hub/README.adoc[]

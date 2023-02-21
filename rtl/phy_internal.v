@@ -126,7 +126,6 @@ module phy_internal (
 		assign wb_ack = 0;
 		assign wb_err = wb_cyc && wb_stb;
 		assign loopback = 0;
-		assign coltest = 0;
 		assign descrambler_test = 0;
 		assign link_monitor_test = 0;
 	end endgenerate

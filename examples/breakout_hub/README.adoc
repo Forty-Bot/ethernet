@@ -1,0 +1,13 @@
+= Ethernet breakout board hub
+
+This directory contains an example design for a 4-port hub. It runs on an
+https://www.olimex.com/Products/FPGA/iCE40/iCE40HX8K-EVB/[Olimex iCE40HX8K-EVB]
+combined with an ethernet breakout board.
+
+To compile this design, run
+
+    $ make examples/breakout_hub/top.bin
+
+from the root directory of this repository. NextPNR can't always reliably place
+and route this design (due to heavy I/O congestion), so you may need to run
+this multiple times.
