@@ -5,6 +5,7 @@ Q = 1
 SYNTH = yosys
 PNR = nextpnr-ice40
 ICARUS = iverilog
+ICEPACK = icepack
 VVP = vvp
 
 .DELETE_ON_ERROR:
