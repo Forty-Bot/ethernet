@@ -1,0 +1,260 @@
+= 100Base-X Ethernet cores
+
+This repository contains several cores which can be used to implement 100Base-X
+Ethernet PHYs, Hubs (Repeaters) and more. All cores are synchronous and are
+designed to be used in a single 125 MHz clock domain. These cores target Lattice
+iCE40 HX FPGAs (in terms of timing), but most modules are not specific to any
+FPGA.
+
+== Building and testing
+
+The following dependencies are required to build this project. Where known,
+specific minimum versions have been specified.
+
+- https://yosyshq.net/yosys/[Yosys] >= 0.4
+- http://iverilog.icarus.com/[Icarus Verilog] >= 12.0
+- https://www.cocotb.org/[cocotb]
+- https://github.com/YosysHQ/nextpnr[nextpnr]
+- https://clifford.at/icestorm[IceStorm]
+
+To build the example designs (under `examples/`), run
+
+    $ make -j$(nproc)
+
+The outputs will be in their respective directories.
+
+To run pre- and post-synthesis tests, run
+
+    $ make -j$(nproc) -O test
+
+To run a pre-synthesis testbench, run
+
+    $ make MODULE.fst
+
+where `MODULE` is the name of the module to test. To run post-synthesis
+simulation, run
+
+    $ make MODULE.synth.fst
+
+You can view `.fst` files with https://gtkwave.sourceforge.net/[GTKWave].
+
+== Resource usage
+
+The following sections show device utilization reports for various
+configurations. All cores are verified to work at 125 MHz.
+
+=== PHY with internal MII
+
+These are the resources used by `phy_internal` with a minimal wrapper necessary
+to ensure proper timing:
+
+|===
+| LUTs | `WISHBONE` | `ENABLE_COUNTERS`
+
+|  408 |          0 |                 0
+|  486 |          1 |                 0
+|  812 |          1 |                 1
+|===
+
+== Modules
+
+This section describes each module found in the `rtl` directory.
+
+=== `axis_replay_buffer`
+
+This module implements an AXI-stream FIFO that can be "`replayed`" indefinitely.
+That is, it will store the first `BUF_SIZE` cycles in a BRAM, and when requested
+it will send them over the master interface again. Once the buffer is exhausted
+it will wait for a replay or continue command. After continuing, it acts as a
+regular synchronous FIFO. This module is intended to help implementing
+half-duplex Ethernet MACs.
+
+=== `axis_mii_tx`
+
+This module implements the transmit half of a full- or half-duplex Ethernet MAC.
+It implements the full CS/CDMA algorithm, and automatically prepends an 8-byte
+preamble/SFD and appends a 4-byte FCS to the data. It currently only supports
+100M ethernet, although 10M would be easy to add. I have no plans to support
+1000M.
+
+=== `descramble`
+
+This implements a descrambler as specified in ANSI X3.264-1995 section 7.2.3. It
+uses the idle sections in the IPG to lock onto the far end's scrambler. It
+typically acquires a lock after 29 bits of data, and will lose lock unless 29
+idle bits are presented every 4500 bytes. Jumbo frames can be easily supported
+by modifying the unlock timeout value.
+
+=== `hub`
+
+This implements an N-port hub (repeater) as specified in IEEE 802.3 clause 29
+with a Wishbone management interface.  Each port implements a separate PHY
+(including a PCS) and an elastic buffer. The hub core reconciles incoming data
+and transmits it over other ports, generating jam bytes as necessary. At the
+moment, partitioning and link stability detection are not implemented.
+
+=== `hub_core`
+
+This implements the core hub functionality. It is completely stateless; it only
+creates jams when multiple ports have incoming data at the same time.
+
+=== `led_blinker`
+
+This implements LED blinking typical of switches and hubs. When triggered, the
+appropriate LED is activated at for one 30 Hz cycle. All LEDs blink in unison.
+This is suitable for displaying signals which would otherwise be too short to
+notice.
+
+=== `mdio`
+
+This is an MII Management Interface to Wishbone bridge. It decodes management
+frames as specified in IEEE 802.3 22.2.4.5. If the Wishbone slave times out or
+returns an error response, the MDIO line remains in high-impedance mode. This
+allows implementing the behavior for unimplemented registers specified in
+22.2.4.3.
+
+=== `mdio_io`
+
+This module instantiates the appropriate I/O block for the MDC, MDIO signals, and an
+output-enable for an external level-shifter. It is intended for use with the
+`mdio` module.
+
+=== `mdio_regs`
+
+This module implements IEEE 802.3 clause 22 registers over a Wishbone interface.
+It may either be used with the `mdio` module or with an internal Wishbone bus.
+In addition to the standard MII registers, it also implements several error
+counter registers in the vendor-specific address space.  Autonegotiation is not
+yet supported. 
+
+=== `mii_elastic_buffer`
+
+This implements an elastic buffer for MII. It is a FIFO where data is only
+offered when the internal level reaches half-full. This allows smoothing out
+differences in clock speed between the local oscillator and the far end.
+
+=== `mii_io_rx`
+
+This module instantiates the appropriate I/O blocks for the receive MII signals
+(`RX_CLK`, `RX_DV`, `RXD`, and `RX_ER`). Due to differences in the local and
+far-end clock rates, the duty cycle of `RX_CLK` may vary, but will always remain
+within limits. Isolation is supported.
+
+=== `mii_io_tx`
+
+This module instantiates the appropriate I/O blocks for the transmit MII signals
+(`TX_CLK`, `TX_EN`, `TXD`, `TX_ER`). Isolation is supported.
+
+=== `nrzi_decode`
+
+This module decodes NRZI signals to NRZ.
+
+=== `nrzi_encode`
+
+This module encodes NRZ signals to NRZI.
+
+=== `pcs_rx`
+
+This module implements the receive half of a 100Base-X PCS as specified in IEEE
+802.3 24.2. Internally, the `pcs_rx_bits` module performs the serial-to-parallel
+conversion and handles the alignment process. It is controlled by the `pcs_rx`
+module, which implements the main receive state machine. Back-to-back packets
+are not supported; at least two idle bits must be present between packets.
+
+=== `pcs_tx`
+
+This module implements the transmit half of a 100Base-X PCS as specified in IEEE
+802.3 24.2. It is a fairly straightforward implementation of the state machine
+and encoding process.
+
+=== `phy_core`
+
+This module integrates the 100Base-X PCS and PMA, and the (de)scrambling part of
+the 100Base-T PMD. It coordinates loopback functionality. It also support
+collision testing.
+
+=== `pmd_dp83223`
+
+This module implements a 100Base-T PMD (except for (de)scrambling) when combined
+with a National Instruments DP83223 "Twister" transciever. The transmit half is
+quite simple, and most of the trick parts are implemented in the
+`pmd_dp83223_rx` module. This module support loopback.
+
+=== `pmd_dp83223_rx`
+
+This module interfaces with a DP83223 and brings its signals into the local
+clock domain. It uses 4x oversampling and determines an appropriate sample using
+the techniques described in https://docs.xilinx.com/v/u/en-US/xapp225[Xilinx
+XAPP225] to select an appropriate sample. The specific implementation is a bit
+different since we use a 250 Mhz clock with a DDR FF (as opposed to four 125 MHz
+clocks in quadrature) and the selection process is split over several clock
+cycles. While most cycles will produce one bit of data, occasionally zero or two
+bits will be produced, due to differences in frequency between the local and far
+ends. This is a disadvantage when compared to a PLL-based solution, as the
+entire rest of the data path up to the PCS (when we can finally align the data)
+must handle these edge cases. However, it avoids the internal,
+nebulously-specified, and limited-in-number iCE40 PLLs.
+
+=== `scramble`
+
+This module implements a scrambler as described in ANSI X3.264-1995 section
+7.1.1.
+
+=== `wb_mux`
+
+This implements a simple Wishbone mux, allowing a single master to access
+several slaves. The address decoding is greatly simplified by assigning each
+slave a (priority-decoded) address bit.
+
+== Interfaces
+
+Throughout this project, a variety of interfaces, some standard and some
+bespoke, are used to communicate between cores. This section describes these
+interfaces.
+
+=== "`MII`"
+
+This is the Media-Independent Interface (MII) described by IEEE 802.3 clause 22.
+However, instead of RX and TX clocks, clock-enables are used instead. This is a
+better fit for the clocking resources found on iCE40 FPGAs. In the 125 MHz clock
+domain used by these cores, the clock enable is asserted every 5 clock cycles.
+The clock enable generated by `pcs_rx` may vary somewhat from this due to
+differences in the local and far end clocks. The `mii_elastic_buffer` module can
+be used to smooth out these variations over the course of a frame.
+
+=== "`PMD`"
+
+This is a bespoke interface used by modules in the receive data path below the
+PCS layer. It consists of three signals: `clk`, `data`, and `data_valid`. `data`
+and `data_valid` are both two bits wide. Data is transferred on the rising edge
+of `clk`. The following table shows the relation between `data` and
+`data_valid`:
+
+[cols="1,1,1"]
+|===
+| `data_valid` | `data[1]` | `data[0]`
+
+|            0 | Invalid   | Invalid
+|            1 | Valid     | Invalid
+|       2 or 3 | Valid     | Valid
+|===
+
+In the case where both bits in `data` are valid, `data[1]` is the most recent
+bit. As a consequence, when `data_valid` is non-zero, `data[1]` always holds the
+new bit to process. Because three bits cannot be transferred at once, only
+`data_valid[1]` is necessary to determine if two bits are to be transferred.
+
+=== AXI-Stream
+
+This is https://zipcpu.com/doc/axi-stream.pdf[AMBA 4 AXI4-Stream], minus several
+signals. Generally, `ARESETn`, `TSTRB`, `TKEEP`, `TID`, `TDEST` are ommitted.
+Sometimes `TUSER` is omitted as well. Additionally, the `A` and `T` prefixes
+are not used.
+
+=== Wishbone
+
+This is https://cdn.opencores.org/downloads/wbspec_b4.pdf[Wishbone B4] in
+non-pipelined mode. Generally, `RST`, `TGA`, `TGC`, `TGD`, `RTY`, `SEL`, and
+`LOCK` signals are omitted. The `_I` and `_O` suffixes are not used. `DAT` is
+named `data_read` or `data_write`, depending on the direction of transfer. `ADR`
+is expanded to `addr`.
