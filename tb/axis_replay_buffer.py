@@ -25,7 +25,8 @@ async def send_packet(signals, packet, ratio=1, last_extra=0):
         else:
             signals['data'].value = val
         signals['valid'].value = 1
-        signals['last'].value = last
+        if 'last' in signals:
+            signals['last'].value = last
         await RisingEdge(signals['clk'])
         while True:
             await FallingEdge(signals['clk'])
