@@ -36,6 +36,18 @@ async def send_packet(signals, packet, ratio=1, last_extra=0):
         if ratio != 1 and not last:
             await ClockCycles(signals['clk'], ratio - 1, rising=False)
 
+async def recv_packet(signals, packet, last=None):
+    if last is None:
+        last = len(packet)
+
+    for i, val in enumerate(packet):
+        while not signals['valid'].value or not signals['ready'].value:
+            await RisingEdge(signals['clk'])
+        assert signals['data'].value == val
+        if 'last' in signals:
+            assert signals['last'].value == (i == last - 1)
+        await RisingEdge(signals['clk'])
+
 @timeout(30, 'us')
 async def test_replay(buf, in_ratio, out_ratio):
     buf.clk.value = BinaryValue('Z')
@@ -69,16 +81,14 @@ async def test_replay(buf, in_ratio, out_ratio):
             }, packet, in_ratio)
 
     async def recv(packet):
-        async def handshake():
-            while not buf.m_axis_valid.value or not buf.m_axis_ready.value:
-                await RisingEdge(buf.clk)
-
         async def recv_len(length):
-            for i, val in enumerate(packet[:length]):
-                await handshake()
-                assert buf.m_axis_data.value == val
-                assert buf.m_axis_last == (i == len(packet) - 1)
-                await RisingEdge(buf.clk)
+            await recv_packet({
+                'clk': buf.clk,
+                'ready': buf.m_axis_ready,
+                'valid': buf.m_axis_valid,
+                'last': buf.m_axis_last,
+                'data': buf.m_axis_data,
+            }, packet[:length], last=len(packet))
 
         async def restart():
             await FallingEdge(buf.clk)
