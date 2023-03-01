@@ -42,11 +42,11 @@ async def recv_packet(signals, packet, last=None):
 
     for i, val in enumerate(packet):
         while not signals['valid'].value or not signals['ready'].value:
-            await RisingEdge(signals['clk'])
+            await FallingEdge(signals['clk'])
         assert signals['data'].value == val
         if 'last' in signals:
             assert signals['last'].value == (i == last - 1)
-        await RisingEdge(signals['clk'])
+        await FallingEdge(signals['clk'])
 
 @timeout(30, 'us')
 async def test_replay(buf, in_ratio, out_ratio):

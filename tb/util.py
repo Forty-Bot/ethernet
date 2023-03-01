@@ -150,9 +150,9 @@ async def ClockEnable(clk, ce, ratio):
         return
 
     while True:
-        await ClockCycles(clk, 1, False)
+        await ClockCycles(clk, 1)
         ce.value = 0
-        await ClockCycles(clk, ratio - 1, False)
+        await ClockCycles(clk, ratio - 1)
         ce.value = 1
 
 # Adapted from https://stackoverflow.com/a/1630350/5086505
