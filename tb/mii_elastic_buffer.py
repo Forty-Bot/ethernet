@@ -73,10 +73,6 @@ async def test_elastic(buf):
         last = None
         for nibble in outs:
             if nibble is not None:
-                try:
-                    int(nibble)
-                except:
-                    raise
                 assert nibble != last
             last = nibble
 
