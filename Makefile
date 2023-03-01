@@ -143,6 +143,7 @@ MODULES += pmd_dp83223
 MODULES += pmd_dp83223_rx
 MODULES += scramble
 MODULES += uart_tx
+MODULES += uart_rx
 MODULES += wb_mux
 
 .PHONY: test

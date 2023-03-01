@@ -205,6 +205,12 @@ This module implements a scrambler as described in ANSI X3.264-1995 section
 A standard UART transmit module, accepting AXI-stream. 8n1 only. Supports
 115,200 and 4,000,000 baud.
 
+=== `uart_rx`
+
+A standard UART receive module, outputting AXI-stream. 8n1 only. Supports
+115,200 and 4,000,000 baud. Properly detects breaks as (single) frame errors,
+and ignores runt start bits.
+
 === `wb_mux`
 
 This implements a simple Wishbone mux, allowing a single master to access
