@@ -74,36 +74,46 @@ async def mdio_write(mdio, phyad, regad, data, **kwargs):
         await FallingEdge(mdio.ce)
         mdio.mdi.value = LogicArray('X')
 
-async def wb_read(mdio, addr, data):
-    while not (mdio.cyc.value and mdio.stb.value):
-        await FallingEdge(mdio.clk)
+async def wb_read(signals, addr, data):
+    while not (signals['cyc'].value and signals['stb'].value):
+        await FallingEdge(signals['clk'])
 
-    assert not mdio.we.value
-    assert mdio.addr.value == addr
-    mdio.data_read.value = data
-    mdio.ack.value = 1
+    assert not signals['we'].value
+    assert signals['addr'].value == addr
+    signals['data_read'].value = data
+    signals['ack'].value = 1
 
-    await RisingEdge(mdio.clk)
-    mdio.ack.value = 0
-    mdio.data_read.value = LogicArray('X' * 16)
+    await RisingEdge(signals['clk'])
+    signals['ack'].value = 0
+    signals['data_read'].value = LogicArray('X' * 16)
 
-    await FallingEdge(mdio.clk)
-    assert not mdio.stb.value
+    await FallingEdge(signals['clk'])
+    assert not signals['stb'].value
 
-async def wb_write(mdio, addr, data):
-    while not (mdio.cyc.value and mdio.stb.value):
-        await FallingEdge(mdio.clk)
+async def wb_write(signals, addr, data):
+    while not (signals['cyc'].value and signals['stb'].value):
+        await FallingEdge(signals['clk'])
 
-    mdio.ack.value = 1
+    signals['ack'].value = 1
 
-    await RisingEdge(mdio.clk)
-    assert mdio.we.value
-    assert mdio.addr.value == addr
-    assert mdio.data_write.value == data
-    mdio.ack.value = 0
+    await RisingEdge(signals['clk'])
+    assert signals['we'].value
+    assert signals['addr'].value == addr
+    assert signals['data_write'].value == data
+    signals['ack'].value = 0
 
-    await FallingEdge(mdio.clk)
-    assert not mdio.stb.value
+    await FallingEdge(signals['clk'])
+    assert not signals['stb'].value
+
+async def wb_err(signals):
+    while not (signals['cyc'].value and signals['stb'].value):
+        await FallingEdge(signals['clk'])
+
+    signals['err'].value = 1
+    await RisingEdge(signals['clk'])
+    signals['err'].value = 0
+    await FallingEdge(signals['clk'])
+    assert not signals['stb'].value
 
 async def setup(mdio):
     mdio.mdi.value = 0
@@ -113,6 +123,19 @@ async def setup(mdio):
     await cocotb.start(ClockEnable(mdio.clk, mdio.ce, MDIO_RATIO))
     await Timer(1)
     await cocotb.start(Clock(mdio.clk, 8, units='ns').start())
+
+def mdio_signals(mdio):
+    return {
+        'clk': mdio.clk,
+        'ack': mdio.ack,
+        'err': mdio.err,
+        'cyc': mdio.cyc,
+        'stb': mdio.stb,
+        'we': mdio.we,
+        'addr': mdio.addr,
+        'data_write': mdio.data_write,
+        'data_read': mdio.data_read,
+    }
 
 @cocotb.test(timeout_time=50, timeout_unit='us')
 async def test_mdio(mdio):
@@ -129,9 +152,10 @@ async def test_mdio(mdio):
             await mdio_write(mdio, 0, write[0], write[1])
     await cocotb.start(rw_mdio())
 
+    signals = mdio_signals(mdio)
     for (read, write) in zip(reads, writes):
-        await wb_read(mdio, read[0], read[1])
-        await wb_write(mdio, write[0], write[1])
+        await wb_read(signals, read[0], read[1])
+        await wb_write(signals, write[0], write[1])
 
 @cocotb.test(timeout_time=20, timeout_unit='us')
 async def test_badmdio(mdio):
@@ -160,20 +184,15 @@ async def test_badmdio(mdio):
 @cocotb.test(timeout_time=20, timeout_unit='us')
 async def test_badwb(mdio):
     await setup(mdio)
+    signals = mdio_signals(mdio)
 
     async def bad_resp():
         # No ack
         await ClockCycles(mdio.stb, 2, False)
         # Error response
         for _ in range(2):
-            while not (mdio.cyc.value and mdio.stb.value):
-                await FallingEdge(mdio.clk)
+            await wb_err(signals)
 
-            mdio.err.value = 1
-            await RisingEdge(mdio.clk)
-            mdio.err.value = 0
-            await FallingEdge(mdio.clk)
-            assert not mdio.stb.value
     await cocotb.start(bad_resp())
 
     for _ in range(2):
