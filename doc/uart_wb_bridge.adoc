@@ -1,0 +1,159 @@
+= UART-Wishbone Bridge
+:docinfo: shared
+
+[[protocol]]
+== Protocol
+
+The following sections outline the protocol used to communicate with the UART
+half of the bridge.
+
+=== Overview
+
+The UART protocol uses a request/response format. Each wishbone transaction
+corresponds to one request and one response. Each request begins with a command
+byte; an optional, variable-length address; and some data if the request is a
+write.  Each response begins with a status byte, followed by some data if the
+request was a read. The following diagram shows a successful read:
+
+++++
+<script type="WaveDrom">
+{ signal : [
+  { name: "rx", wave: "z34444z....", data: "CMD ADDR0 ADDR1 ADDR2 ADDR3" },
+  { name: "tx", wave: "z......655z", data: "STATUS DATA0 DATA1" },
+  ],
+  config: { hscale: 2 },
+}
+</script>
+++++
+
+Similarly, this diagram shows a successful write:
+
+++++
+<script type="WaveDrom">
+{ signal : [
+  { name: "rx", wave: "z3444455z..", data: "CMD ADDR0 ADDR1 ADDR2 ADDR3 DATA0 DATA1" },
+  { name: "tx", wave: "z........6z", data: "RESP" },
+  ],
+  config: { hscale: 2 },
+}
+</script>
+++++
+
+The bridge contains an internal address register that retains its state between
+different transactions. It possible to reduce the length of requests by
+partially modifying the address register.
+
+=== Requests
+
+Each request begins with a command byte. The format of the command byte is as
+follows:
+
+.Command byte
+[cols="1,1,4a"]
+|===
+| Bit | Name | Description
+
+|   0 | Clear | Setting this bit clears the address register before modifying
+                it. The address register should always be cleared during the
+		first transaction following a reset.
+|   1 | Write-Enable | If this bit is set, this request is a write, and a data
+		       phase follows the address phase. Otherwise, this request
+		       is a read, and there is no data phase.
+|   2 | Post-Increment | If this bit is set, the address register will be
+                         incremented when the transaction completes.
+| 4:3 | Address length
+| This field indicates the number of bytes in the subsequent address phase.
+!===
+! Value ! Address bytes
+
+!     0 ! 0 (no address phase)
+!     1 ! 1
+!     2 ! 2
+!     3 ! 4
+!===
+| 7:5 | Reserved | Reserved, set to 0.
+|===
+
+Following the command byte, there is an optional address phase. The length of
+the address phase is determined by the command byte. Bytes in the address phase
+are loaded into the address register. The address is transmitted in big-endian
+byte order (most-significant byte first). If number of bytes in the address
+phase is smaller than the size of the address register, the lower bytes in the
+address register will be replaced, and the upper bytes will not be modified.
+
+The following table shows the value of each byte in the address register after a
+particular address phase. Bytes are numbered by the order they are transmitted:
+
+.Address phase
+|===
+| Address bytes | Address[31:24] | Address[23:16] | Address[15:8] | Address[7:0]
+
+| 0 | Unmodified | Unmodified | Unmodified | Unmodifed
+| 1 | Unmodified | Unmodified | Unmodified | Byte 0
+| 2 | Unmodified | Unmodified | Byte 0     | Byte 1
+| 4 | Byte 0     | Byte 1     | Byte 2     | Byte 3
+|===
+
+Finally, there is a data phase if the request is a write. Data is transmitted
+in big-endian byte order (most-significant byte first).
+
+Any requests transmitted while the bridge is processing another request will not
+be handled correctly. This condition is indicated by an overflow status in
+response to the initial request. 
+
+=== Responses
+
+Each response begins with a status byte. The format of the status byte is as
+follows:
+
+.Status byte
+[cols="1,1,4a"]
+|===
+| Bit | Name | Description
+
+| 0 | Write Response | If set, the response is for a write and no data phase
+		       follows. Otherwise, the response is for a read and a data
+		       phase will follow.
+| 1 | Bus Error | There was bus error when servicing the request, and no data
+		  phase will follow. This bit has priority over any data phase
+		  implied by the Write Response bit.
+| 2 | Reserved | Reserved, do not use.
+| 3 | Overflow | While processing this request, the receive UART overflowed, and
+                 one or more request bytes were dropped. The bridge must be
+		 reset before issuing the next command.
+| 7:4 | Reserved | Reserved, do not use.
+|===
+
+Finally, there is a data phase if the request was a read. Data is transmitted
+in big-endian byte order (most-significant byte first).
+
+=== Resetting
+
+The bridge and wishbone bus may be reset by sending a character with a framing
+error (a break) over the serial line. The bridge should be reset before each
+session in order to bring the bridge into a known state.
+
+=== Examples
+
+A read of `0xcafe` from `0x00000123` followed by a write of `0xbabe` to the same
+address:
+
+++++
+<script type="WaveDrom">
+{ signal : [
+  { name: "rx", wave: "z344z....355z..", data: "11 01 23 02 ba be" },
+  { name: "tx", wave: "z....655z....6z", data: "00 ca fe 01" },
+]}
+</script>
+++++
+
+Reading from `0x80001000`, `0x80002000`, and `0x80002001`:
+
+++++
+<script type="WaveDrom">
+{ signal : [
+  { name: "rx", wave: "z34444z....344z....3z....", data: "18 80 00 10 00 14 20 00 00" },
+  { name: "tx", wave: "z......655z....655z..655z", data: "00 d0 0d 00 fe ed 00 fa ce" },
+]}
+</script>
+++++

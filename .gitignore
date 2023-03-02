@@ -18,3 +18,6 @@ __pycache__
 *.fst
 results.xml
 test_profile.pstat
+
+# doc artifacts
+*.html

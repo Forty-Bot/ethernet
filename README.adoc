@@ -77,6 +77,15 @@ preamble/SFD and appends a 4-byte FCS to the data. It currently only supports
 100M ethernet, although 10M would be easy to add. I have no plans to support
 1000M.
 
+=== `axis_wb_bridge`
+
+This module implements an AXI Stream to Wishbone bridge. This is not a
+more-typical DMA bridge, where streaming data is written in a fixed pattern.
+Rather, this module allows interactive or scripted examination and readout
+of a Wishbone bus. For more details on the protocol implemented by this bridge,
+refer to the xref:doc/uart_wb_bridge.adoc#protocol[UART-Wishbone Bridge
+documentation].
+
 === `descramble`
 
 This implements a descrambler as specified in ANSI X3.264-1995 section 7.2.3. It

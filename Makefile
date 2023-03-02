@@ -2,6 +2,7 @@
 # Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
 
 Q = 1
+ADOC = asciidoctor
 SYNTH = yosys
 PNR = nextpnr-ice40
 ICARUS = iverilog
@@ -124,6 +125,7 @@ endef
 
 MODULES += axis_replay_buffer
 MODULES += axis_mii_tx
+MODULES += axis_wb_bridge
 MODULES += descramble
 MODULES += hub
 MODULES += hub_core
@@ -153,6 +155,17 @@ test: $(addsuffix .fst,$(MODULES)) $(addsuffix .synth.fst,$(MODULES))
 .PHONY: asc
 asc: $(addprefix rtl/,$(addsuffix .asc,$(MODULES)))
 
+doc/output:
+	mkdir -p $@
+
+doc/output/%.html: doc/%.adoc doc/docinfo.html | doc/output
+	$(ADOC) -o $@ $<
+
+DOCS += uart_wb_bridge
+
+.PHONY: htmldocs
+htmldocs: $(addprefix doc/output/,$(addsuffix .html,$(DOCS)))
+
 CLEAN_EXT := .json .asc .pre .vvp .d .synth.v .place.v .sdf .bin
 
 .PHONY: clean
@@ -161,3 +174,4 @@ clean:
 	rm -rf log
 	rm -f $(addprefix rtl/*,$(CLEAN_EXT))
 	rm -f $(addprefix examples/*/*,$(CLEAN_EXT))
+	rm -rf doc/output
