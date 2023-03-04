@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-Only
 /*
- * Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
+ * Copyright (C) 2023 Sean Anderson <seanga2@gmail.com>
  */
 
 `include "common.vh"
@@ -21,8 +21,8 @@ module axis_wb_bridge (
 	input wb_ack, wb_err,
 	output reg wb_cyc, wb_stb, wb_we,
 	output reg [ADDR_WIDTH - 1:0] wb_addr,
-	output reg [15:0] wb_data_write,
-	input [15:0] wb_data_read,
+	output reg [DATA_WIDTH - 1:0] wb_data_write,
+	input [DATA_WIDTH - 1:0] wb_data_read,
 
 	input overflow
 );
@@ -51,7 +51,7 @@ module axis_wb_bridge (
 	reg wb_ack_last, wb_err_last;
 	reg wb_stb_next, wb_we_next;
 	reg [ADDR_WIDTH - 1:0] wb_addr_next;
-	reg [15:0] wb_data_write_next, wb_data_latch, wb_data_latch_next;
+	reg [DATA_WIDTH - 1:0] wb_data_write_next, wb_data_latch, wb_data_latch_next;
 	reg [3:0] state, state_next;
 	reg overflow_latch, overflow_latch_next, postinc, postinc_next;
 
