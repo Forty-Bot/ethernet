@@ -4,10 +4,12 @@
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
+from cocotb.regression import TestFactory
 from cocotb.triggers import FallingEdge, Timer
 from cocotb.utils import get_sim_time, get_sim_steps
 
 from .axis_replay_buffer import recv_packet
+from .util import ClockEnable, timeout
 
 BAUD = 4e6
 BIT_STEPS = get_sim_steps(1 / BAUD, 'sec', round_mode='round')
@@ -22,11 +24,11 @@ async def putchar(rx, c):
         rx.value = bit
         await Timer(BIT_STEPS)
 
-@cocotb.test(timeout_time=1, timeout_unit='ms')
-async def test_rx(uart):
+@timeout(1, 'ms')
+async def test_rx(uart, ratio):
     uart.clk.value = BinaryValue('Z')
     uart.rst.value = 1
-    uart.ready.value = 1
+    uart.ready.value = 0
     uart.rx.value = 1
     uart.high_speed.value = 1
 
@@ -34,6 +36,7 @@ async def test_rx(uart):
     uart.rst.value = 0
     await cocotb.start(Clock(uart.clk, 8, units='ns').start())
     await FallingEdge(uart.clk)
+    ce = await cocotb.start(ClockEnable(uart.clk, uart.ready, ratio))
 
     msg = b"Hell\0"
     signals = {
@@ -68,6 +71,7 @@ async def test_rx(uart):
 
     assert frame_errors == 1
 
+    ce.kill()
     uart.ready.value = 0
     await putchar(uart.rx, 0xFF)
     await putchar(uart.rx, 0)
@@ -78,3 +82,7 @@ async def test_rx(uart):
     await recv_packet(signals, (0xFF,))
 
     monitor.kill()
+
+uart_tests = TestFactory(test_rx)
+uart_tests.add_option('ratio', (1, 4))
+uart_tests.generate_tests()

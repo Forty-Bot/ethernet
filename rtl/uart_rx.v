@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-Only
 /*
- * Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
+ * Copyright (C) 2023 Sean Anderson <seanga2@gmail.com>
  *
  * 8n1@115200; no one uses anything else (and neither do I)
  */
@@ -56,7 +56,7 @@ module uart_rx (
 		lfsr_next = { lfsr[9:0], lfsr[10] ^ lfsr[8] };
 		bits_next = bits;
 		data_next = data;
-		valid_next = valid && !ready_last;
+		valid_next = valid && !ready;
 		overflow_next = 0;
 		frame_error_next = 0;
 
