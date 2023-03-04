@@ -12,6 +12,21 @@ from .axis_replay_buffer import send_packet
 BAUD = 4e6
 BIT_STEPS = get_sim_steps(1 / BAUD, 'sec', round_mode='round')
 
+async def getchar(signals):
+    while not signals['tx'].value:
+        await FallingEdge(signals['clk'])
+    while signals['tx'].value:
+        await FallingEdge(signals['clk'])
+    await Timer(BIT_STEPS // 2)
+
+    result = 0
+    for _ in range(8):
+        await Timer(BIT_STEPS)
+        result >>= 1
+        result |= 0x80 if signals['tx'].value else 0
+
+    return result
+
 @cocotb.test(timeout_time=1, timeout_unit='ms')
 async def test_tx(uart):
     uart.clk.value = BinaryValue('Z')
@@ -33,24 +48,12 @@ async def test_tx(uart):
         'ready': uart.ready,
     }, msg))
 
-    async def getchar():
-        while not uart.tx.value:
-            await FallingEdge(uart.clk)
-        while uart.tx.value:
-            await FallingEdge(uart.clk)
-        await Timer(BIT_STEPS // 2)
-
-        result = 0
-        for _ in range(8):
-            await Timer(BIT_STEPS)
-            result >>= 1
-            result |= 0x80 if uart.tx.value else 0
-
-        return result
-
     then = get_sim_time()
     for c in msg:
-        assert c == await getchar()
+        assert c == await getchar({
+            'clk': uart.clk,
+            'tx': uart.tx,
+        })
     now = get_sim_time()
 
     expected = BIT_STEPS * (10 * len(msg) - 1.5)
