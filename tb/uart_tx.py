@@ -15,10 +15,12 @@ BIT_STEPS = get_sim_steps(1 / BAUD, 'sec', round_mode='round')
 @cocotb.test(timeout_time=1, timeout_unit='ms')
 async def test_tx(uart):
     uart.clk.value = BinaryValue('Z')
+    uart.rst.value = 1
     uart.valid.value = 0
     uart.high_speed.value = BAUD == 4e6
 
     await Timer(1)
+    uart.rst.value = 0
     await cocotb.start(Clock(uart.clk, 8, units='ns').start())
     await FallingEdge(uart.clk)
 

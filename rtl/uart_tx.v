@@ -8,7 +8,7 @@
 `include "common.vh"
 
 module uart_tx (
-	input clk,
+	input clk, rst,
 
 	input [7:0] data,
 	output reg ready,
@@ -30,12 +30,6 @@ module uart_tx (
 	reg [10:0] lfsr, lfsr_next;
 	reg [3:0] counter, counter_next;
 	reg [8:0] bits, bits_next;
-
-	initial begin
-		ready = 1'b1;
-		valid_last = 1'b0;
-		bits = 9'h1ff;
-	end	
 
 	always @(*) begin
 		tx = bits[0];
@@ -64,11 +58,21 @@ module uart_tx (
 
 	always @(posedge clk) begin
 		data_last <= data;
-		ready <= ready_next;
-		valid_last <= valid;
 		counter <= counter_next;
 		lfsr <= lfsr_next;
-		bits <= bits_next;
 	end
+
+	always @(posedge clk, posedge rst) begin
+		if (rst) begin
+			ready <= 1'b1;
+			valid_last <= 1'b0;
+			bits <= 9'h1ff;
+		end else begin
+			ready <= ready_next;
+			valid_last <= valid;
+			bits <= bits_next;
+		end
+	end
+
 
 endmodule
