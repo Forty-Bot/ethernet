@@ -46,7 +46,7 @@ module axis_wb_bridge (
 	localparam RESP1	= 9;
 	localparam RESP0	= 10;
 
-	reg s_axis_ready_next, s_axis_valid_last, m_axis_ready_last, m_axis_valid_next;
+	reg s_axis_ready_next, s_axis_valid_last, m_axis_valid_next;
 	reg [7:0] s_axis_data_last, m_axis_data_next;
 	reg wb_ack_last, wb_err_last;
 	reg wb_stb_next, wb_we_next;
@@ -58,7 +58,7 @@ module axis_wb_bridge (
 	always @(*) begin
 		s_axis_ready_next = s_axis_ready;
 		m_axis_valid_next = m_axis_valid;
-		m_axis_data_next = 8'bX;
+		m_axis_data_next = m_axis_data;
 
 		wb_cyc = wb_stb;
 		wb_stb_next = wb_stb;
@@ -137,15 +137,15 @@ module axis_wb_bridge (
 			overflow_latch_next = 0;
 			state_next = wb_we || wb_err ? RESP0 : RESP2;
 		end
-		RESP2: if (m_axis_ready_last) begin
+		RESP2: if (m_axis_ready && m_axis_valid) begin
 			m_axis_data_next = wb_data_latch[15:8];
 			state_next = RESP1;
 		end
-		RESP1: if (m_axis_ready_last) begin
+		RESP1: if (m_axis_ready && m_axis_valid) begin
 			m_axis_data_next = wb_data_latch[7:0];
 			state_next = RESP0;
 		end
-		RESP0: if (m_axis_ready_last) begin
+		RESP0: if (m_axis_ready && m_axis_valid) begin
 			m_axis_valid_next = 0;
 			s_axis_ready_next = 1;
 			state_next = IDLE;
@@ -167,7 +167,6 @@ module axis_wb_bridge (
 		if (rst) begin
 			s_axis_ready <= 1;
 			s_axis_valid_last <= 0;
-			m_axis_ready_last <= 0;
 			m_axis_valid <= 0;
 			wb_ack_last <= 0;
 			wb_err_last <= 0;
@@ -177,7 +176,6 @@ module axis_wb_bridge (
 		end else begin
 			s_axis_ready <= s_axis_ready_next;
 			s_axis_valid_last <= s_axis_valid;
-			m_axis_ready_last <= m_axis_ready;
 			m_axis_valid <= m_axis_valid_next;
 			wb_ack_last <= wb_ack;
 			wb_err_last <= wb_err;

@@ -4,11 +4,12 @@
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
+from cocotb.regression import TestFactory
 from cocotb.triggers import FallingEdge, Timer
 
 from .axis_replay_buffer import send_packet, recv_packet
 from .mdio import wb_read, wb_write, wb_err
-from .util import BIT, GENMASK
+from .util import BIT, ClockEnable, GENMASK, timeout
 
 CMD_CLEAR = BIT(0)
 CMD_WE = BIT(1)
@@ -68,8 +69,8 @@ class Encoder:
         self.last_addr = (addr & ~GENMASK(7, 0)) | ((addr + postinc) & GENMASK(7, 0))
         return (cmd, *addr_bytes, *data_bytes)
 
-@cocotb.test(timeout_time=10, timeout_unit='us')
-async def test_bridge(bridge):
+@timeout(10, 'us')
+async def test_bridge(bridge, in_ratio, out_ratio):
     bridge.clk.value = BinaryValue('Z')
     bridge.rst.value = 1
     bridge.s_axis_valid.value = 0
@@ -82,6 +83,7 @@ async def test_bridge(bridge):
     bridge.rst.value = 0
     await cocotb.start(Clock(bridge.clk, 8, units='ns').start())
     await FallingEdge(bridge.clk)
+    await cocotb.start(ClockEnable(bridge.clk, bridge.m_axis_ready, out_ratio))
 
     s_axis = {
         'clk': bridge.clk,
@@ -112,7 +114,7 @@ async def test_bridge(bridge):
     e = Encoder()
 
     async def read(addr, data, postinc=False, resp=0):
-        await send_packet(s_axis, e.encode(addr, None, postinc))
+        await send_packet(s_axis, e.encode(addr, None, postinc), in_ratio)
 
         bridge.overflow.value = bool(resp & STATUS_OVERFLOW)
         if resp & STATUS_ERR:
@@ -125,7 +127,7 @@ async def test_bridge(bridge):
             await recv_packet(m_axis, (resp, *data.to_bytes(2, 'big')))
 
     async def write(addr, data, postinc=False, resp=STATUS_WE):
-        await send_packet(s_axis, e.encode(addr, data, postinc))
+        await send_packet(s_axis, e.encode(addr, data, postinc), in_ratio)
 
         bridge.overflow.value = bool(resp & STATUS_OVERFLOW)
         if resp & STATUS_ERR:
@@ -164,3 +166,8 @@ async def test_bridge(bridge):
     await read(7, 8, resp=STATUS_ERR)
     await read(9, 10, resp=STATUS_OVERFLOW)
     await write(11, 12)
+
+bridge_tests = TestFactory(test_bridge)
+bridge_tests.add_option('in_ratio', (1, 4))
+bridge_tests.add_option('out_ratio', (1, 4))
+bridge_tests.generate_tests()
