@@ -118,4 +118,26 @@ module uart_rx (
 		end
 	end
 
+`ifndef SYNTHESIS
+	reg [255:0] state_text;
+
+	always @(*) begin
+		case (state)
+		ERROR: state_text = "ERROR";
+		IDLE: state_text = "IDLE";
+		START: state_text = "START";
+		D0: state_text = "D0";
+		D1: state_text = "D1";
+		D2: state_text = "D2";
+		D3: state_text = "D3";
+		D4: state_text = "D4";
+		D5: state_text = "D5";
+		D6: state_text = "D6";
+		D7: state_text = "D7";
+		STOP: state_text = "STOP";
+		endcase
+	end
+`endif
+
+
 endmodule
