@@ -25,6 +25,8 @@ async def getchar(signals):
         result >>= 1
         result |= 0x80 if signals['tx'].value else 0
 
+    await Timer(BIT_STEPS)
+    assert signals['tx'].value
     return result
 
 @cocotb.test(timeout_time=1, timeout_unit='ms')
@@ -56,6 +58,6 @@ async def test_tx(uart):
         })
     now = get_sim_time()
 
-    expected = BIT_STEPS * (10 * len(msg) - 1.5)
+    expected = BIT_STEPS * (10 * len(msg) - 0.5)
     actual = now - then
     assert abs(actual - expected) / expected < 0.01
