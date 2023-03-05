@@ -107,6 +107,9 @@ ifeq ($(shell test -c /dev/stdin && echo 1),1)
 export COCOTB_ANSI_OUTPUT=1
 endif
 
+# There are too my columns by default; reduce them
+export COCOTB_REDUCED_LOG_FMT=2
+
 define run-vvp =
 MODULE=tb.$* $(VVP) $(VVPFLAGS) $< $(PLUSARGS)
 endef
