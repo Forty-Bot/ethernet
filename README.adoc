@@ -220,6 +220,15 @@ A standard UART receive module, outputting AXI-stream. 8n1 only. Supports
 115,200 and 4,000,000 baud. Properly detects breaks as (single) frame errors,
 and ignores runt start bits.
 
+=== `uart_wb_bridge`
+
+This module combines the above UART cores with the AXI-stream bridge from before
+to allow controlling a Wishbone bus over a UART. There is no internal buffering,
+but some FIFOs could easily be added to allow more in-flight transactions. At
+the moment this only supports 16 data busses with 16-bit granularity. Frame
+errors (breaks) reset the bridge (but not the UARTs), providing an "`out of
+band`" ability for synchronization.
+
 === `wb_mux`
 
 This implements a simple Wishbone mux, allowing a single master to access
