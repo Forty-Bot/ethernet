@@ -4,10 +4,12 @@
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
+from cocotb.regression import TestFactory
 from cocotb.triggers import FallingEdge, Timer
 from cocotb.utils import get_sim_time, get_sim_steps
 
 from .axis_replay_buffer import send_packet
+from .util import timeout
 
 BAUD = 4e6
 BIT_STEPS = get_sim_steps(1 / BAUD, 'sec', round_mode='round')
@@ -29,8 +31,8 @@ async def getchar(signals):
     assert signals['tx'].value
     return result
 
-@cocotb.test(timeout_time=1, timeout_unit='ms')
-async def test_tx(uart):
+@timeout(50, 'us')
+async def test_tx(uart, ratio):
     uart.clk.value = BinaryValue('Z')
     uart.rst.value = 1
     uart.valid.value = 0
@@ -43,12 +45,14 @@ async def test_tx(uart):
 
     msg = b"Hello"
 
-    await cocotb.start(send_packet({
+    axis = {
         'clk': uart.clk,
         'data': uart.data,
         'valid': uart.valid,
         'ready': uart.ready,
-    }, msg))
+    }
+
+    await cocotb.start(send_packet(axis, msg, ratio))
 
     then = get_sim_time()
     for c in msg:
@@ -61,3 +65,7 @@ async def test_tx(uart):
     expected = BIT_STEPS * (10 * len(msg) - 0.5)
     actual = now - then
     assert abs(actual - expected) / expected < 0.01
+
+uart_tests = TestFactory(test_tx)
+uart_tests.add_option('ratio', (1, int(125e6 / BAUD * 10)))
+uart_tests.generate_tests()

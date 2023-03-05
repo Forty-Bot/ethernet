@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-Only
 /*
- * Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
+ * Copyright (C) 2023 Sean Anderson <seanga2@gmail.com>
  *
  * 8n1@115200; no one uses anything else (and neither do I)
  */
@@ -25,8 +25,7 @@ module uart_tx (
 	/* 31 cycles, for 4M baud with a 125 MHz clock */
 	parameter FAST_VALUE	= 11'h68e;
 
-	reg [7:0] data_last;
-	reg valid_last, ready_next;
+	reg ready_next;
 	reg [10:0] lfsr, lfsr_next;
 	reg [3:0] counter, counter_next;
 	reg [8:0] bits, bits_next;
@@ -48,16 +47,15 @@ module uart_tx (
 			bits_next = { 1'b1, bits[8:1] };
 		end
 
-		if (valid_last && ready) begin
+		if (valid && ready) begin
 			ready_next = 0;
 			counter_next = 9;
 			lfsr_next = high_speed ? FAST_VALUE : SLOW_VALUE;
-			bits_next = { data_last, 1'b0 };
+			bits_next = { data, 1'b0 };
 		end
 	end
 
 	always @(posedge clk) begin
-		data_last <= data;
 		counter <= counter_next;
 		lfsr <= lfsr_next;
 	end
@@ -65,14 +63,11 @@ module uart_tx (
 	always @(posedge clk, posedge rst) begin
 		if (rst) begin
 			ready <= 1'b1;
-			valid_last <= 1'b0;
 			bits <= 9'h1ff;
 		end else begin
 			ready <= ready_next;
-			valid_last <= valid;
 			bits <= bits_next;
 		end
 	end
-
 
 endmodule
