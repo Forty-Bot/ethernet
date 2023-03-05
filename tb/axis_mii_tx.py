@@ -143,7 +143,12 @@ async def start(mac, packet, **kwargs):
 BIT_TIME_NS = 10
 BYTE_TIME_NS = 8 * BIT_TIME_NS
 
+COCOTB_17 = tuple(int(part) for part in cocotb.__version__.split('.')[:2]) >= (1, 7)
+
 async def collide(mac, ns, duration=16):
+    # newer cocotbs order writes before the clock
+    ns += COCOTB_17
+
     while not mac.mii_tx_en.value:
         await FallingEdge(mac.clk)
 
