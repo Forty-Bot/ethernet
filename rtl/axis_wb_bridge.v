@@ -46,8 +46,8 @@ module axis_wb_bridge (
 	localparam RESP1	= 9;
 	localparam RESP0	= 10;
 
-	reg s_axis_ready_next, s_axis_valid_last, m_axis_valid_next;
-	reg [7:0] s_axis_data_last, m_axis_data_next;
+	reg s_axis_ready_next, m_axis_valid_next;
+	reg [7:0] m_axis_data_next;
 	reg wb_ack_last, wb_err_last;
 	reg wb_stb_next, wb_we_next;
 	reg [ADDR_WIDTH - 1:0] wb_addr_next;
@@ -75,12 +75,12 @@ module axis_wb_bridge (
 		overflow_latch_next = overflow_latch || overflow;
 
 		case (state)
-		IDLE: if (s_axis_valid_last) begin
-			if (s_axis_data_last[0])
+		IDLE: if (s_axis_valid && s_axis_ready) begin
+			if (s_axis_data[0])
 				wb_addr_next = {ADDR_WIDTH{1'b0}};
-			wb_we_next = s_axis_data_last[1];
-			postinc_next = s_axis_data_last[2];
-			case (s_axis_data_last[4:3])
+			wb_we_next = s_axis_data[1];
+			postinc_next = s_axis_data[2];
+			case (s_axis_data[4:3])
 			2'd3: state_next = ADDR3;
 			2'd2: state_next = ADDR1;
 			2'd1: state_next = ADDR0;
@@ -93,24 +93,24 @@ module axis_wb_bridge (
 			end
 			endcase
 		end
-		ADDR3: if (s_axis_valid_last) begin
+		ADDR3: if (s_axis_valid && s_axis_ready) begin
 			if (ADDR_WIDTH >= 32)
-				wb_addr_next[31:24] = s_axis_data_last;
+				wb_addr_next[31:24] = s_axis_data;
 			state_next = ADDR2;
 		end
-		ADDR2: if (s_axis_valid_last) begin
+		ADDR2: if (s_axis_valid && s_axis_ready) begin
 			if (ADDR_WIDTH >= 24)
-				wb_addr_next[23:16] = s_axis_data_last;
+				wb_addr_next[23:16] = s_axis_data;
 			state_next = ADDR1;
 		end
-		ADDR1: if (s_axis_valid_last) begin
+		ADDR1: if (s_axis_valid && s_axis_ready) begin
 			if (ADDR_WIDTH >= 16)
-				wb_addr_next[15:8] = s_axis_data_last;
+				wb_addr_next[15:8] = s_axis_data;
 			state_next = ADDR0;
 		end
-		ADDR0: if (s_axis_valid_last) begin
+		ADDR0: if (s_axis_valid && s_axis_ready) begin
 			if (ADDR_WIDTH >= 8)
-				wb_addr_next[7:0] = s_axis_data_last;
+				wb_addr_next[7:0] = s_axis_data;
 			if (wb_we) begin
 				state_next = DATA1;
 			end else begin
@@ -119,12 +119,12 @@ module axis_wb_bridge (
 				s_axis_ready_next = 0;
 			end
 		end
-		DATA1: if (s_axis_valid_last) begin
-			wb_data_write_next = { wb_data_write[7:0], s_axis_data_last };
+		DATA1: if (s_axis_valid && s_axis_ready) begin
+			wb_data_write_next = { wb_data_write[7:0], s_axis_data };
 			state_next = DATA0;
 		end
-		DATA0: if(s_axis_valid_last) begin
-			wb_data_write_next = { wb_data_write[7:0], s_axis_data_last };
+		DATA0: if(s_axis_valid && s_axis_ready) begin
+			wb_data_write_next = { wb_data_write[7:0], s_axis_data };
 			state_next = BUS;
 			wb_stb_next = 1;
 			s_axis_ready_next = 0;
@@ -154,7 +154,6 @@ module axis_wb_bridge (
 	end
 
 	always @(posedge clk) begin
-		s_axis_data_last <= s_axis_data;
 		m_axis_data <= m_axis_data_next;
 		wb_we <= wb_we_next;
 		wb_addr <= wb_addr_next;
@@ -166,7 +165,6 @@ module axis_wb_bridge (
 	always @(posedge clk, posedge rst) begin
 		if (rst) begin
 			s_axis_ready <= 1;
-			s_axis_valid_last <= 0;
 			m_axis_valid <= 0;
 			wb_ack_last <= 0;
 			wb_err_last <= 0;
@@ -175,7 +173,6 @@ module axis_wb_bridge (
 			overflow_latch <= 0;
 		end else begin
 			s_axis_ready <= s_axis_ready_next;
-			s_axis_valid_last <= s_axis_valid;
 			m_axis_valid <= m_axis_valid_next;
 			wb_ack_last <= wb_ack;
 			wb_err_last <= wb_err;
