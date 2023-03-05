@@ -26,9 +26,9 @@ async def test_transfer(phy):
     phy.link_monitor_test_mode.value = 1
     await cocotb.start(ClockEnable(phy.clk, phy.tx_ce, 5))
     await Timer(1)
-    phy.signal_status.value = 1
     await cocotb.start(Clock(phy.clk, 8, units='ns').start())
-    await FallingEdge(phy.tx_ce)
+    await FallingEdge(phy.clk)
+    phy.signal_status.value = 1
 
     tx_data = list(as_nibbles([0x55, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]))
     rx_data = list(as_nibbles((0x55, 0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10)))
