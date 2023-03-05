@@ -204,6 +204,12 @@ entire rest of the data path up to the PCS (when we can finally align the data)
 must handle these edge cases. However, it avoids the internal,
 nebulously-specified, and limited-in-number iCE40 PLLs.
 
+=== `reset_sync`
+
+This module synchronizes external reset signals (asynchronous assert and
+release) into the local clock domain (asynchronous assert, desynchronous
+release). A glitch filter suppresses spurious resets.
+
 === `scramble`
 
 This module implements a scrambler as described in ANSI X3.264-1995 section
