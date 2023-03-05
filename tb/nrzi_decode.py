@@ -21,7 +21,7 @@ async def nrzi_decode(bits):
 @timeout(10, 'us')
 async def test_rx(decoder, valids):
     decoder.nrzi_valid.value = 0
-    decoder.nrzi.value = LogicArray('X', 'X')
+    decoder.nrzi.value = LogicArray('XX')
     decoder.rst.value = 1
     await Timer(1)
     await cocotb.start(Clock(decoder.clk, 8, units='ns').start())

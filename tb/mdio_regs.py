@@ -51,7 +51,7 @@ async def wb_xfer(signals, addr, data=None):
     assert signals['ack'].value or signals['err'].value
     signals['stb'].value = 0
     signals['we'].value = LogicArray('X')
-    signals['addr'].value = LogicArray('X' * 4)
+    signals['addr'].value = LogicArray('X' * len(signals['addr']))
     signals['data_write'].value = LogicArray('X' * 16)
     if data is None and signals['ack'].value:
         return signals['data_read'].value
