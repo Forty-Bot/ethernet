@@ -62,8 +62,7 @@ module axis_replay_buffer (
 	parameter BUF_SIZE	= 54;
 	localparam BUF_WIDTH	= $clog2(BUF_SIZE + 1);
 
-	reg [DATA_WIDTH - 1:0] s_axis_data_last;
-	reg s_axis_valid_last, s_axis_last_last, s_axis_ready_next;
+	reg s_axis_ready_next;
 	reg m_axis_valid_next, m_axis_last_next;
 	reg sent_last, sent_last_next;
 	reg [DATA_WIDTH - 1:0] buffer [(2 ** BUF_WIDTH) - 1:0];
@@ -77,10 +76,10 @@ module axis_replay_buffer (
 		s_ptr_next = s_ptr;
 		last_next = last;
 		last_ptr_next = last_ptr;
-		if (s_axis_valid_last && s_axis_ready) begin
+		if (s_axis_valid && s_axis_ready) begin
 			we = 1;
 			s_ptr_next = s_ptr + 1;
-			if (s_axis_last_last) begin
+			if (s_axis_last) begin
 				last_next = 1;
 				last_ptr_next = s_ptr;
 			end
@@ -141,11 +140,10 @@ module axis_replay_buffer (
 
 	always @(posedge clk) begin
 		if (we)
-			buffer[s_ptr[BUF_WIDTH - 1:0]] <= { s_axis_data_last };
+			buffer[s_ptr[BUF_WIDTH - 1:0]] <= { s_axis_data };
 		if (re)
 			{ m_axis_data } <= buffer[m_ptr[BUF_WIDTH - 1:0]];
 		last_ptr <= last_ptr_next;
-		s_axis_data_last <= s_axis_data;
 	end
 
 	always @(posedge clk, posedge rst) begin
@@ -154,8 +152,6 @@ module axis_replay_buffer (
 			s_ptr <= 0;
 			last <= 0;
 			replayable <= 1;
-			s_axis_valid_last <= 0;
-			s_axis_last_last <= 0;
 			s_axis_ready <= 1;
 			m_axis_valid <= 0;
 			m_axis_last <= 0;
@@ -165,8 +161,6 @@ module axis_replay_buffer (
 			s_ptr <= s_ptr_next;
 			last <= last_next;
 			replayable <= replayable_next;
-			s_axis_valid_last <= s_axis_valid;
-			s_axis_last_last <= s_axis_last;
 			s_axis_ready <= s_axis_ready_next;
 			m_axis_last <= m_axis_last_next;
 			m_axis_valid <= m_axis_valid_next;
