@@ -95,6 +95,7 @@ module mdio_regs (
 	reg duplex, link_status_latched, link_status_latched_next, link_status_last, disconnect;
 	reg loopback_next, pdown_next, isolate_next, duplex_next, coltest_next;
 	reg descrambler_test_next, link_monitor_test_next;
+	reg nwl, pwl, dl, fcl, sel;
 	/* Can't meet timing at 16 bits wide */
 	reg [COUNTER_WIDTH-1:0] nwc, pwc, dc, fcc, sec;
 	reg [COUNTER_WIDTH-1:0] nwc_next, pwc_next, dc_next, fcc_next, sec_next;
@@ -110,6 +111,11 @@ module mdio_regs (
 		link_status_latched = 0;
 		link_status_last = 0;
 		if (ENABLE_COUNTERS) begin
+			nwl = 0;
+			pwl = 0;
+			dl = 0;
+			fcl = 0;
+			sel = 0;
 			nwc = 0;
 			pwc = 0;
 			dc = 0;
@@ -138,11 +144,11 @@ module mdio_regs (
 			fcc_next = fcc;
 			sec_next = sec;
 
-			if (!(&nwc)) nwc_next = nwc + negative_wraparound;
-			if (!(&pwc)) pwc_next = pwc + positive_wraparound;
-			if (!(&dc)) dc_next = dc + disconnect;
-			if (!(&fcc)) fcc_next = fcc + false_carrier;
-			if (!(&sec)) sec_next = sec + symbol_error;
+			if (!(&nwc)) nwc_next = nwc + nwl;
+			if (!(&pwc)) pwc_next = pwc + pwl;
+			if (!(&dc)) dc_next = dc + dl;
+			if (!(&fcc)) fcc_next = fcc + fcl;
+			if (!(&sec)) sec_next = sec + sel;
 		end
 
 		data_read_next = 0;
@@ -265,6 +271,11 @@ module mdio_regs (
 		err <= err_next;
 		data_read <= data_read_next;
 		if (ENABLE_COUNTERS) begin
+			nwl <= negative_wraparound;
+			pwl <= positive_wraparound;
+			dl <= disconnect;
+			fcl <= false_carrier;
+			sel <= symbol_error;
 			nwc <= nwc_next;
 			pwc <= pwc_next;
 			dc <= dc_next;

@@ -60,7 +60,7 @@ async def wb_xfer(signals, addr, data=None, delay=1):
     if data is None and signals['ack'].value:
         return signals['data_read'].value
 
-@cocotb.test(timeout_time=1, timeout_unit='us')
+@cocotb.test(timeout_time=2, timeout_unit='us')
 async def test_mdio(regs):
     regs.cyc.value = 1
     regs.stb.value = 0
@@ -127,6 +127,7 @@ async def test_mdio(regs):
 
     async def counter_test(reg, signal, edge_triggered=False, active_high=True):
         signal.value = 1 if active_high else 0
+        await FallingEdge(regs.clk)
         assert await xfer(reg) == 1
         await xfer(reg, 0xfffe)
         if edge_triggered:
