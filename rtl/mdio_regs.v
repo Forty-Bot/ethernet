@@ -90,15 +90,18 @@ module mdio_regs (
 	localparam VCR_LTEST		= 14;
 
 	integer i;
+	reg ack_next, err_next;
+	reg [15:0] data_read_next;
 	reg duplex, link_status_latched, link_status_latched_next, link_status_last, disconnect;
 	reg loopback_next, pdown_next, isolate_next, duplex_next, coltest_next;
 	reg descrambler_test_next, link_monitor_test_next;
-	reg [15:0] data_read_next;
 	/* Can't meet timing at 16 bits wide */
 	reg [COUNTER_WIDTH-1:0] nwc, pwc, dc, fcc, sec;
 	reg [COUNTER_WIDTH-1:0] nwc_next, pwc_next, dc_next, fcc_next, sec_next;
 
 	initial begin
+		ack = 0;
+		err = 0;
 		loopback = 0;
 		pdown = 0;
 		isolate = 1;
@@ -143,8 +146,8 @@ module mdio_regs (
 		end
 
 		data_read_next = 0;
-		ack = cyc && stb;
-		err = 0;
+		ack_next = cyc && stb;
+		err_next = 0;
 		case (addr)
 		BMCR: begin
 			data_read_next[BMCR_LOOPBACK] = loopback;
@@ -154,7 +157,7 @@ module mdio_regs (
 			data_read_next[BMCR_DUPLEX] = duplex;
 			data_read_next[BMCR_COLTEST] = coltest;
 
-			if (ack && we) begin
+			if (ack_next && we) begin
 				loopback_next = data_write[BMCR_LOOPBACK];
 				pdown_next = data_write[BMCR_PDOWN];
 				isolate_next = data_write[BMCR_ISOLATE];
@@ -186,7 +189,7 @@ module mdio_regs (
 			data_read_next[BMSR_LSTATUS] = link_status_latched;
 			data_read_next[BMSR_EXTCAP] = 1;
 
-			if (ack && !we)
+			if (ack_next && !we)
 				link_status_latched_next = link_status;
 		end
 		ID1: begin
@@ -202,38 +205,38 @@ module mdio_regs (
 		NWCR: if (ENABLE_COUNTERS) begin
 			data_read_next = nwc;
 
-			if (ack)
+			if (ack_next)
 				nwc_next = we ? data_write : negative_wraparound;
 		end
 		PWCR: if (ENABLE_COUNTERS) begin
 			data_read_next = pwc;
 
-			if (ack)
+			if (ack_next)
 				pwc_next = we ? data_write : positive_wraparound;
 		end
 		DCR: if (ENABLE_COUNTERS) begin
 			data_read_next = dc;
 
-			if (ack)
+			if (ack_next)
 				dc_next = we ? data_write : disconnect;
 		end
 		FCCR: if (ENABLE_COUNTERS) begin
 			data_read_next = fcc;
 
-			if (ack)
+			if (ack_next)
 				fcc_next = we ? data_write : false_carrier;
 		end
 		SECR: if (ENABLE_COUNTERS) begin
 			data_read_next = sec;
 
-			if (ack)
+			if (ack_next)
 				sec_next = we ? data_write : symbol_error;
 		end
 		VCR: begin
 			data_read_next[VCR_DTEST] = descrambler_test;
 			data_read_next[VCR_LTEST] = link_monitor_test;
 
-			if (ack && we) begin
+			if (ack_next && we) begin
 				descrambler_test_next = data_write[VCR_DTEST];
 				link_monitor_test_next = data_write[VCR_LTEST];
 			end
@@ -242,8 +245,8 @@ module mdio_regs (
 			if (EMULATE_PULLUP) begin
 				data_read_next = 16'hFFFF;
 			end else begin
-				err = ack;
-				ack = 0;
+				err_next = ack_next;
+				ack_next = 0;
 				data_read_next = 16'hXXXX;
 			end
 		end
@@ -258,6 +261,8 @@ module mdio_regs (
 		coltest <= coltest_next;
 		link_status_latched <= link_status_latched_next;
 		link_status_last <= link_status;
+		ack <= ack_next;
+		err <= err_next;
 		data_read <= data_read_next;
 		if (ENABLE_COUNTERS) begin
 			nwc <= nwc_next;

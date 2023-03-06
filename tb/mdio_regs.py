@@ -37,7 +37,7 @@ BMSR_EXTCAP = BIT(0)
 VCR_DTEST = BIT(15)
 VCR_LTEST = BIT(14)
 
-async def wb_xfer(signals, addr, data=None):
+async def wb_xfer(signals, addr, data=None, delay=1):
     await FallingEdge(signals['clk'])
     signals['stb'].value = 1
     signals['addr'].value = addr
@@ -47,7 +47,11 @@ async def wb_xfer(signals, addr, data=None):
         signals['we'].value = 1
         signals['data_write'].value = data
 
-    await FallingEdge(signals['clk'])
+    for _ in range(delay + 1):
+        await FallingEdge(signals['clk'])
+        if signals['ack'].value or signals['err'].value:
+            break
+
     assert signals['ack'].value or signals['err'].value
     signals['stb'].value = 0
     signals['we'].value = LogicArray('X')
