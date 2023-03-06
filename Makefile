@@ -97,6 +97,7 @@ PNR_RETRIES := 10
 	$(ICEPACK) $< $@
 
 -include $(wildcard rtl/*.d)
+-include $(wildcard examples/*/*.d)
 
 export LIBPYTHON_LOC := $(shell cocotb-config --libpython)
 VVPFLAGS := -M $(shell cocotb-config --lib-dir)
