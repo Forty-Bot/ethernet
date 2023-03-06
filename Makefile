@@ -70,6 +70,7 @@ endef
 	$(run-icarus)
 
 PNRARGS := --freq 125 --hx8k --package ct256 --pcf-allow-unconstrained --no-promote-globals
+PNRARGS += --no-print-critical-path-source
 
 define run-pnr =
 	$(PNR) -q $(PNRARGS) --json $< --log log/$(*F).$(LOG_EXT)
