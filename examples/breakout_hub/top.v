@@ -45,8 +45,10 @@ module top (
 	reg [3:0] receiving;
 
 	hub #(
-		.WISHBONE(0),
-		.PORT_COUNT(4)
+		.PORT_COUNT(4),
+		.WISHBONE(1),
+		.ENABLE_COUNTERS(1),
+		.COUNTER_WIDTH(16)
 	) hub (
 		.clk_125(clk_125),
 		.clk_250(clk_250),

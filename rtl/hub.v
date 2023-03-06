@@ -30,6 +30,7 @@ module hub (
 	parameter PORT_COUNT		= 4;
 	parameter ELASTIC_BUF_SIZE	= 3;
 	parameter ENABLE_COUNTERS	= 1;
+	parameter COUNTER_WIDTH		= 15;
 	parameter [23:0] OUI		= 0;
 	parameter [5:0] MODEL		= 0;
 	parameter [3:0] REVISION	= 0;
@@ -95,6 +96,7 @@ module hub (
 		phy_internal #(
 			.WISHBONE(WISHBONE),
 			.ENABLE_COUNTERS(ENABLE_COUNTERS),
+			.COUNTER_WIDTH(COUNTER_WIDTH),
 			.OUI(OUI),
 			.MODEL(MODEL),
 			.REVISION(REVISION)

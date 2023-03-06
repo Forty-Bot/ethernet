@@ -47,6 +47,7 @@ module phy_internal (
 
 	parameter WISHBONE		= 1;
 	parameter ENABLE_COUNTERS	= 1;
+	parameter COUNTER_WIDTH		= 15;
 	parameter [23:0] OUI		= 0;
 	parameter [5:0] MODEL		= 0;
 	parameter [3:0] REVISION	= 0;
@@ -100,7 +101,8 @@ module phy_internal (
 			.MODEL(MODEL),
 			.REVISION(REVISION),
 			.EMULATE_PULLUP(1'b1),
-			.ENABLE_COUNTERS(ENABLE_COUNTERS)
+			.ENABLE_COUNTERS(ENABLE_COUNTERS),
+			.COUNTER_WIDTH(COUNTER_WIDTH)
 		) mdio_regs (
 			.clk(clk_125),
 			.ack(wb_ack),
