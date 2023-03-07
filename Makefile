@@ -154,6 +154,7 @@ MODULES += uart_tx
 MODULES += uart_rx
 MODULES += uart_wb_bridge
 MODULES += wb_mux
+MODULES += wb_reg
 
 .PHONY: test
 test: $(addsuffix .fst,$(MODULES)) $(addsuffix .synth.fst,$(MODULES))

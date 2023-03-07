@@ -241,6 +241,11 @@ This implements a simple Wishbone mux, allowing a single master to access
 several slaves. The address decoding is greatly simplified by assigning each
 slave a (priority-decoded) address bit.
 
+=== `wb_reg`
+
+Add a register stage to a wishbone bus. This helps improve timing, but will add
+a cycle of latency (and decrease throughput).
+
 == Interfaces
 
 Throughout this project, a variety of interfaces, some standard and some
