@@ -43,7 +43,7 @@ async def test_hub(hub):
 
     # Enable fast link stabilization for testing
     for i in range(4):
-        await wb_xfer(wb, BIT(i + 5) + VCR, VCR_LTEST)
+        await wb_xfer(wb, BIT(i + 5) + VCR, VCR_LTEST, delay=2)
 
     packet = list(as_nibbles((0x55, *b"Hello world!")))
     packet_bits = list(itertools.chain.from_iterable(frame(packet)))
@@ -97,5 +97,5 @@ async def test_hub(hub):
     await Combine(*(Join(t) for t in receivers))
 
     for i in range(4):
-        assert not await wb_xfer(wb, BIT(i + 5) + BMSR) & BMSR_LSTATUS
-        assert await wb_xfer(wb, BIT(i + 5) + BMSR) & BMSR_LSTATUS
+        assert not await wb_xfer(wb, BIT(i + 5) + BMSR, delay=2) & BMSR_LSTATUS
+        assert await wb_xfer(wb, BIT(i + 5) + BMSR, delay=2) & BMSR_LSTATUS
