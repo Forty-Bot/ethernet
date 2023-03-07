@@ -28,7 +28,7 @@ module hub (
 
 	parameter WISHBONE		= 1;
 	parameter PORT_COUNT		= 4;
-	parameter ELASTIC_BUF_SIZE	= 3;
+	parameter ELASTIC_BUF_SIZE	= 5;
 	parameter ENABLE_COUNTERS	= 1;
 	parameter COUNTER_WIDTH		= 15;
 	parameter [23:0] OUI		= 0;
