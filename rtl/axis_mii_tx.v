@@ -185,6 +185,7 @@ module axis_mii_tx (
 	reg [9:0] lfsr, lfsr_next, backoff, backoff_next;
 	reg transmit_ok_next, gave_up_next, late_collision_next;
 	reg underflow_next, err, err_next;
+	initial lfsr <= 10'h3ff;
 
 	always @(*) begin
 		mii_tx_ce_next_next_next = 0;
@@ -516,6 +517,7 @@ module axis_mii_tx (
 		backoff <= backoff_next;
 		crc_state <= crc_state_next;
 		collision <= collision_next;
+		lfsr <= lfsr_next;
 	end
 
 	always @(posedge clk, posedge rst) begin
@@ -529,7 +531,6 @@ module axis_mii_tx (
 			state <= IPG_EARLY;
 			state_counter <= IPG_EARLY_BYTES - 1;
 			retries <= MAX_RETRIES - 1;
-			lfsr <= 10'h3ff;
 			transmit_ok <= 0;
 			gave_up <= 0;
 			late_collision <= 0;
@@ -548,7 +549,6 @@ module axis_mii_tx (
 			state <= state_next;
 			state_counter <= state_counter_next;
 			retries <= retries_next;
-			lfsr <= lfsr_next;
 			transmit_ok <= transmit_ok_next;
 			gave_up <= gave_up_next;
 			late_collision <= late_collision_next;
