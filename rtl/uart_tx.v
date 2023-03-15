@@ -20,9 +20,13 @@ module uart_tx (
 	input high_speed
 );
 
-	/* 1085 cycles, for 115200 baud with a 125 MHz clock */
+	/*
+	 * $ scripts/lfsr.py 0x500 1085 31
+	 *
+	 * 115200 baud with a 125 MHz clock
+	 */
 	parameter SLOW_VALUE	= 11'h78c;
-	/* 31 cycles, for 4M baud with a 125 MHz clock */
+	/* 4M baud with a 125 MHz clock */
 	parameter FAST_VALUE	= 11'h68e;
 
 	reg ready_next;

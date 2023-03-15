@@ -25,10 +25,14 @@ module uart_rx (
 	output reg frame_error
 );
 
-	/* 1085 cycles, for 115200 baud with a 125 MHz clock */
+	/*
+	 * $ scripts/lfsr.py 0x500 1085 543 31 16
+	 *
+	 * 115200 baud with a 125 MHz clock
+	 */
 	parameter SLOW_FULL	= 11'h78c;
 	parameter SLOW_HALF	= 11'h202;
-	/* 31 cycles, for 4M baud with a 125 MHz clock */
+	/* 4M baud with a 125 MHz clock */
 	parameter FAST_FULL	= 11'h68e;
 	parameter FAST_HALF	= 11'h34c;
 

@@ -38,21 +38,19 @@ module descramble (
 	 * We use a LFSR for the unlock counter in order to relax the timing
 	 * requirements. Although we could use a 16-bit register, we use
 	 * a 17-bit one to reduce the number of taps we need. Values were
-	 * generated with the following python script:
+	 * generated with:
 	 *
-	 * lfsr = 0x1ffff
-	 * for _ in range(2**17 - cycles - 1):
-	 *     lfsr = ((lfsr << 1) & 0x1ffff) | (((lfsr >> 16) & 1) ^ ((lfsr >> 13) & 1))
+	 * $ scripts/lfsr.py 0x12000 90460 45125 625
 	 *
-	 * The amount of time without recieving consecutive idles before we
+	 * The amount of time without receiving consecutive idles before we
 	 * unlock. This must be greater than 361us (7.2.3.3(f)), which is
 	 * 45125 cycles at 125MHz.
 	 */
-	localparam UNLOCK_VALUE = 17'h29fc;
+	localparam UNLOCK_VALUE = 17'h05b08;
 	/* One 9000-byte jumbo frame plus an extra preamble */
-	localparam JUMBO_UNLOCK_VALUE = 17'h12d84;
+	localparam JUMBO_UNLOCK_VALUE = 17'h053f9;
 	/* One minimum-length packet plus some extra (5us or 625 cycles) */
-	localparam TEST_UNLOCK_VALUE = 17'h11077;
+	localparam TEST_UNLOCK_VALUE = 17'h020ef;
 	reg [16:0] unlock_counter, unlock_counter_next;
 
 	always @(*) begin

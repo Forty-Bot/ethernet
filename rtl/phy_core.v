@@ -88,14 +88,13 @@ module phy_core (
 	);
 
 	/*
-	 * LFSR counter; see descramble.v for details on how these values were
-	 * generated.
+	 * $ scripts/lfsr.py 0x12000 41250 16
          *
-	 * 50000 cycles or 400 us at 125MHz
+	 * 41250 cycles or 330 us at 125MHz
 	 */
-	localparam STABILIZE_VALUE = 17'h1ac86;
+	localparam STABILIZE_VALUE = 17'h1590c;
 	/* 16 cycles; there's no instability while testing */
-	localparam TEST_STABILIZE_VALUE = 17'h11c71;
+	localparam TEST_STABILIZE_VALUE = 17'h038e3;
 
 	reg link_status_next;
 	initial link_status = 0;
