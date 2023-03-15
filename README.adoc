@@ -1,10 +1,13 @@
-= 100Base-X Ethernet cores
+= Verilog Ethernet
 
-This repository contains several cores which can be used to implement 100Base-X
-Ethernet PHYs, Hubs (Repeaters) and more. All cores are synchronous and are
+This repository is home to several cores which can be used to implement 100Base-X
+Ethernet PHYs, Hubs (Repeaters), and more. All cores are synchronous and are
 designed to be used in a single 125 MHz clock domain. These cores target Lattice
 iCE40 HX FPGAs (in terms of timing), but most modules are not specific to any
 FPGA.
+
+Refer to https://forty-bot.github.io/ethernet/[documentation site] for further
+details.
 
 == Building and testing
 

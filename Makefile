@@ -169,6 +169,7 @@ doc/output:
 doc/output/%.html: doc/%.adoc doc/docinfo.html | doc/output
 	$(ADOC) -o $@ $<
 
+DOCS += index
 DOCS += uart_wb_bridge
 
 .PHONY: htmldocs
