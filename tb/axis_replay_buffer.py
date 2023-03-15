@@ -57,11 +57,13 @@ async def test_replay(buf, in_ratio, out_ratio):
     buf.replay.value = 0
     buf.done.value = 0
 
-    await Timer(1)
-    buf.rst.value = 0
-    await cocotb.start(Clock(buf.clk, 8, units='ns').start())
-    await FallingEdge(buf.clk)
-    await cocotb.start(ClockEnable(buf.clk, buf.m_axis_ready, out_ratio))
+    async def init():
+        await Timer(1)
+        await cocotb.start(Clock(buf.clk, 8, units='ns').start())
+        await cocotb.start(ClockEnable(buf.clk, buf.m_axis_ready, out_ratio))
+        await FallingEdge(buf.clk)
+        buf.rst.value = 0
+    await cocotb.start(init())
 
     # A packet equal to BUF_SIZE, one around 2**BUF_WIDTH, and one around
     # 2**(BUF_WIDTH + 1) (plus some extra). This should capture most of the fun

@@ -152,7 +152,7 @@ module axis_replay_buffer (
 			s_ptr <= 0;
 			last <= 0;
 			replayable <= 1;
-			s_axis_ready <= 1;
+			s_axis_ready <= 0;
 			m_axis_valid <= 0;
 			m_axis_last <= 0;
 			sent_last <= 0;
