@@ -2,7 +2,7 @@
 
 This directory contains an example design to test the LED blinkers. It runs on an
 https://www.olimex.com/Products/FPGA/iCE40/iCE40HX8K-EVB/[Olimex iCE40HX8K-EVB].
-Pushing the buttons will cause the LEDs to blink at 30 Hz.
+Pushing the buttons will cause the LEDs to blink at 15 Hz.
 
 To compile this design, run
 

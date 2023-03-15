@@ -22,17 +22,17 @@ module led_blinker (
 	parameter LEDS		= 2;
 
 	/*
-	 * $ scripts/lfsr.py 0x140000 0x1fffff 16
+	 * $ scripts/lfsr.py 0x300000 4166667 16
 	 *
-	 * 16.78 ms
+	 * 33.33 ms
 	 */
-	localparam TIMER_RESET		= 21'h1ffffe;
+	localparam TIMER_RESET		= 22'h27b194;
 	/* 16 cycles */
-	localparam TEST_TIMER_RESET	= 21'h13333f;
+	localparam TEST_TIMER_RESET	= 22'h15557f;
 
 	reg active, active_next;
 	reg [LEDS - 1:0] out_next, triggered, triggered_next;
-	reg [20:0] lfsr, lfsr_next;
+	reg [21:0] lfsr, lfsr_next;
 
 	initial begin
 		active = 0;
@@ -45,7 +45,7 @@ module led_blinker (
 		active_next = active;
 		triggered_next = triggered | triggers;
 		out_next = out;
-		lfsr_next = { lfsr[19:0], lfsr[20] ^ lfsr[18] };
+		lfsr_next = { lfsr[20:0], lfsr[21] ^ lfsr[20] };
 		if (&lfsr) begin
 			if (active) begin
 				active_next = 0;
