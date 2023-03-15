@@ -29,10 +29,13 @@ async def init(mac):
     mac.axis_err.value = 0
     mac.short_backoff.value = 1
     mac.half_duplex.value = 1
-    await Timer(1)
-    mac.rst.value = 0
-    await cocotb.start(Clock(mac.clk, 8, units='ns').start())
-    await FallingEdge(mac.clk)
+
+    async def _init():
+        await Timer(1)
+        await cocotb.start(Clock(mac.clk, 8, units='ns').start())
+        await FallingEdge(mac.clk)
+        mac.rst.value = 0
+    await cocotb.start(_init())
 
 def send_packet(mac, packet, **kwargs):
     return axis_replay_buffer.send_packet({
@@ -119,11 +122,11 @@ async def get_status(mac):
     underflow = 0
 
     while not (ok or gave_up or late or underflow) or mac.mii_tx_en.value:
+        await RisingEdge(mac.clk)
         ok += mac.transmit_ok.value
         gave_up += mac.gave_up.value
         late += mac.late_collision.value
         underflow += mac.underflow.value
-        await FallingEdge(mac.clk)
 
     assert ok + gave_up + late + underflow == 1
     if ok:
@@ -202,7 +205,7 @@ async def test_send(mac, ratio):
             await RisingEdge(mac.clk)
         # The first IPG may not be exact
         if i:
-            assert get_sim_time('step') - start == get_sim_steps(12 * 80 - 4, 'ns')
+            assert get_sim_time('step') - start == get_sim_steps(12 * 80, 'ns')
 
         compare(await recv.join(), packet)
         assert await status.join() == Status.OK
