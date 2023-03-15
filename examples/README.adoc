@@ -6,3 +6,4 @@ cores in this project.
 :leveloffset: +1
 
 include::breakout_hub/README.adoc[]
+include::led/README.adoc[]

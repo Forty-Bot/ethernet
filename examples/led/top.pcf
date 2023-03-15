@@ -1,0 +1,5 @@
+set_io -nowarn clk_100 J3
+set_io -nowarn LED[0] M12
+set_io -nowarn LED[1] R16
+set_io -nowarn BUT[0] K11
+set_io -nowarn BUT[1] P13
