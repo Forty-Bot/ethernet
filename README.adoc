@@ -301,3 +301,8 @@ non-pipelined mode. Generally, `RST`, `TGA`, `TGC`, `TGD`, `RTY`, `SEL`, and
 `LOCK` signals are omitted. The `_I` and `_O` suffixes are not used. `DAT` is
 named `data_read` or `data_write`, depending on the direction of transfer. `ADR`
 is expanded to `addr`.
+
+== Licensing
+
+All cores are licensed under AGPL 3. See COPYING for details. Contact me if you
+are interested in using these cores under a different license.
