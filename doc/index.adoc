@@ -3,4 +3,5 @@
 This is the documentation for my https://github.com/Forty-Bot/ethernet[ethernet
 cores].
 
+* xref:interfaces.adoc[Interfaces]
 * xref:uart_wb_bridge.adoc[UART-Wishbone Bridge]
