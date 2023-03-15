@@ -28,8 +28,11 @@ module mdio_regs (
 	output reg link_monitor_test
 );
 
-	/* The current price of a CID is $805... */
-	parameter [23:0] OUI		= 0;
+	/*
+	 * A test OUI in "canonical" form. Don't use this! It's just here to
+	 * test the bit-reversal logic (as seen in 802 8.2.2).
+	 */
+	parameter [23:0] OUI		= 24'hacde48;
 	parameter [5:0] MODEL		= 0;
 	parameter [3:0] REVISION	= 0;
 	/*
@@ -199,14 +202,19 @@ module mdio_regs (
 				link_status_latched_next = link_status;
 		end
 		ID1: begin
-			for (i = 0; i < 16; i = i + 1)
-				data_read_next[i] = OUI[17 - i];
+			/* "bit-reverse" the OUI */
+			for (i = 6; i < 8; i = i + 1)
+				data_read_next[i - 6] = OUI[7 - i];
+			for (i = 0; i < 8; i = i + 1)
+				data_read_next[i + 2] = OUI[15 - i];
+			for (i = 0; i < 6; i = i + 1)
+				data_read_next[i + 10] = OUI[23 - i];
 		end
 		ID2: begin
 			data_read_next[3:0] = REVISION;
 			data_read_next[9:4] = MODEL;
 			for (i = 0; i < 6; i = i + 1)
-				data_read_next[i + 4] = OUI[23 - i];
+				data_read_next[i + 10] = OUI[7 - i];
 		end
 		NWCR: if (ENABLE_COUNTERS) begin
 			data_read_next = nwc;

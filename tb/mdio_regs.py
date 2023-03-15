@@ -116,10 +116,10 @@ async def test_mdio(regs):
     assert await xfer(BMSR) & BMSR_LSTATUS
 
     await xfer(PHYID1, 0xffff)
-    assert await xfer(PHYID1) == 0
+    assert await xfer(PHYID1) == 0xd5ec
 
     await xfer(PHYID2, 0xffff)
-    assert await xfer(PHYID2) == 0
+    assert await xfer(PHYID2) == 0x4800
 
     # I'm pretty sure this register will never be implemented
     assert await xfer(EXTSTATUS) is None
