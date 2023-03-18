@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-Only
+// SPDX-License-Identifier: AGPL-3.0-Only OR CERN-OHL-S-2.0
 /*
  * Copyright (C) 2023 Sean Anderson <seanga2@gmail.com>
  */
