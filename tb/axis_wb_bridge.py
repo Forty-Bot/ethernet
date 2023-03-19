@@ -124,7 +124,7 @@ async def test_bridge(bridge, in_ratio, out_ratio):
         else:
             await wb_read(wb, addr, data)
             bridge.overflow.value = 0
-            await recv_packet(m_axis, (resp, *data.to_bytes(2, 'big')))
+            await recv_packet(m_axis, (resp, *data.to_bytes(2, 'little')))
 
     async def write(addr, data, postinc=False, resp=STATUS_WE):
         await send_packet(s_axis, e.encode(addr, data, postinc), in_ratio)
@@ -154,7 +154,7 @@ async def test_bridge(bridge, in_ratio, out_ratio):
         await f(0x00000000, 11)
 
     # fast back-to-back
-    recv = await cocotb.start(recv_packet(m_axis, (STATUS_WE, 0, 0, 4)))
+    recv = await cocotb.start(recv_packet(m_axis, (STATUS_WE, 0, 4, 0)))
     await send_packet(s_axis, e.encode(1, 2))
     await wb_write(wb, 1, 2)
     await send_packet(s_axis, e.encode(3))

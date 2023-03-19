@@ -28,23 +28,20 @@ module axis_wb_bridge (
 );
 
 	parameter ADDR_WIDTH	= 32;
+	parameter DATA_WIDTH	= 16;
 	generate if (ADDR_WIDTH % 8)
 		     $error("Unsupported ADDR_WIDTH");
 	endgenerate
-	/* The data width is not parametric for now */
-	localparam DATA_WIDTH	= 16;
 
 	localparam IDLE		= 0;
 	localparam ADDR3	= 1;
 	localparam ADDR2	= 2;
 	localparam ADDR1	= 3;
 	localparam ADDR0	= 4;
-	localparam DATA1	= 5;
-	localparam DATA0	= 6;
-	localparam BUS		= 7;
-	localparam RESP2	= 8;
-	localparam RESP1	= 9;
-	localparam RESP0	= 10;
+	localparam DATA		= 5;
+	localparam BUS		= 6;
+	localparam RESP		= 7;
+	localparam END		= 8;
 
 	reg s_axis_ready_next, m_axis_valid_next;
 	reg [7:0] m_axis_data_next;
@@ -53,6 +50,7 @@ module axis_wb_bridge (
 	reg [ADDR_WIDTH - 1:0] wb_addr_next;
 	reg [DATA_WIDTH - 1:0] wb_data_write_next, wb_data_latch, wb_data_latch_next;
 	reg [3:0] state, state_next;
+	reg [2:0] counter, counter_next;
 	reg overflow_latch, overflow_latch_next, postinc, postinc_next;
 
 	always @(*) begin
@@ -71,6 +69,7 @@ module axis_wb_bridge (
 			wb_data_latch_next = wb_data_latch;
 
 		state_next = state;
+		counter_next = counter;
 		postinc_next = postinc;
 		overflow_latch_next = overflow_latch || overflow;
 
@@ -85,13 +84,15 @@ module axis_wb_bridge (
 			2'd2: state_next = ADDR1;
 			2'd1: state_next = ADDR0;
 			2'd0: if (wb_we_next) begin
-				state_next = DATA1;
+				state_next = DATA;
 			end else begin
 				state_next = BUS;
 				wb_stb_next = 1;
 				s_axis_ready_next = 0;
 			end
 			endcase
+
+			counter_next = 1;
 		end
 		ADDR3: if (s_axis_valid && s_axis_ready) begin
 			if (ADDR_WIDTH >= 32)
@@ -112,22 +113,21 @@ module axis_wb_bridge (
 			if (ADDR_WIDTH >= 8)
 				wb_addr_next[7:0] = s_axis_data;
 			if (wb_we) begin
-				state_next = DATA1;
+				state_next = DATA;
 			end else begin
 				state_next = BUS;
 				wb_stb_next = 1;
 				s_axis_ready_next = 0;
 			end
 		end
-		DATA1: if (s_axis_valid && s_axis_ready) begin
+		DATA: if(s_axis_valid && s_axis_ready) begin
 			wb_data_write_next = { wb_data_write[7:0], s_axis_data };
-			state_next = DATA0;
-		end
-		DATA0: if(s_axis_valid && s_axis_ready) begin
-			wb_data_write_next = { wb_data_write[7:0], s_axis_data };
-			state_next = BUS;
-			wb_stb_next = 1;
-			s_axis_ready_next = 0;
+			counter_next = counter - 1;
+			if (!counter) begin
+				state_next = BUS;
+				wb_stb_next = 1;
+				s_axis_ready_next = 0;
+			end
 		end
 		BUS: if (wb_ack || wb_err) begin
 			wb_stb_next = 0;
@@ -135,17 +135,16 @@ module axis_wb_bridge (
 			m_axis_valid_next = 1;
 			m_axis_data_next = { 4'b0, overflow_latch_next, 1'b0, wb_err, wb_we };
 			overflow_latch_next = 0;
-			state_next = wb_we || wb_err ? RESP0 : RESP2;
+			state_next = wb_we || wb_err ? END : RESP;
 		end
-		RESP2: if (m_axis_ready && m_axis_valid) begin
-			m_axis_data_next = wb_data_latch[15:8];
-			state_next = RESP1;
-		end
-		RESP1: if (m_axis_ready && m_axis_valid) begin
+		RESP: if (m_axis_ready && m_axis_valid) begin
 			m_axis_data_next = wb_data_latch[7:0];
-			state_next = RESP0;
+			wb_data_latch_next = { 8'bX, wb_data_latch[15:8] };
+			counter_next = counter - 1;
+			if (!counter)
+				state_next = END;
 		end
-		RESP0: if (m_axis_ready && m_axis_valid) begin
+		END: if (m_axis_ready && m_axis_valid) begin
 			m_axis_valid_next = 0;
 			s_axis_ready_next = 1;
 			state_next = IDLE;
@@ -160,6 +159,7 @@ module axis_wb_bridge (
 		wb_data_write <= wb_data_write_next;
 		wb_data_latch <= wb_data_latch_next;
 		postinc <= postinc_next;
+		counter <= counter_next;
 	end
 
 	always @(posedge clk, posedge rst) begin
@@ -192,12 +192,10 @@ module axis_wb_bridge (
 		ADDR2: state_text = "ADDR2";
 		ADDR1: state_text = "ADDR1";
 		ADDR0: state_text = "ADDR0";
-		DATA1: state_text = "DATA1";
-		DATA0: state_text = "DATA0";
+		DATA: state_text = "DATA";
 		BUS: state_text = "BUS";
-		RESP2: state_text = "RESP2";
-		RESP1: state_text = "RESP1";
-		RESP0: state_text = "RESP0";
+		END: state_text = "RESP";
+		RESP: state_text = "END";
 		endcase
 	end
 `endif

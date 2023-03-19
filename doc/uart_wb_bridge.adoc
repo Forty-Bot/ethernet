@@ -13,26 +13,26 @@ The UART protocol uses a request/response format. Each wishbone transaction
 corresponds to one request and one response. Each request begins with a command
 byte; an optional, variable-length address; and some data if the request is a
 write.  Each response begins with a status byte, followed by some data if the
-request was a read. The following diagram shows a successful read:
+request was a read. The following diagram shows a successful 16-bit read:
 
 ++++
 <script type="WaveDrom">
 { signal : [
-  { name: "rx", wave: "z34444z....", data: "CMD ADDR0 ADDR1 ADDR2 ADDR3" },
-  { name: "tx", wave: "z......655z", data: "STATUS DATA0 DATA1" },
+  { name: "rx", wave: "z34444z....", data: "CMD ADDR ADDR ADDR ADDR" },
+  { name: "tx", wave: "z......655z", data: "STATUS DATA DATA" },
   ],
   config: { hscale: 2 },
 }
 </script>
 ++++
 
-Similarly, this diagram shows a successful write:
+Similarly, this diagram shows a successful 32-bit write:
 
 ++++
 <script type="WaveDrom">
 { signal : [
-  { name: "rx", wave: "z3444455z..", data: "CMD ADDR0 ADDR1 ADDR2 ADDR3 DATA0 DATA1" },
-  { name: "tx", wave: "z........6z", data: "RESP" },
+  { name: "rx", wave: "z3444455z..", data: "CMD ADDR ADDR DATA DATA DATA DATA" },
+  { name: "tx", wave: "z........6z", data: "STATUS" },
   ],
   config: { hscale: 2 },
 }
@@ -40,8 +40,8 @@ Similarly, this diagram shows a successful write:
 ++++
 
 The bridge contains an internal address register that retains its state between
-different transactions. It possible to reduce the length of requests by
-partially modifying the address register.
+different transactions. Requests may send fewer address bytes if the upper bytes
+do not need to be modified.
 
 === Requests
 
@@ -124,8 +124,8 @@ follows:
 | 7:4 | Reserved | Reserved, do not use.
 |===
 
-Finally, there is a data phase if the request was a read. Data is transmitted
-in big-endian byte order (most-significant byte first).
+Finally, there is a data phase if the request was a successful read. Data is
+transmitted in little-endian byte order (least-significant byte first).
 
 === Resetting
 
