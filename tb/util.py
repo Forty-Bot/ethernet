@@ -2,6 +2,7 @@
 # Copyright (C) 2022 Sean Anderson <seanga2@gmail.com>
 
 import functools
+import itertools
 import random
 
 import cocotb
@@ -79,28 +80,20 @@ class ReverseList(list):
         return super().__reversed__()
 
 def one_valid():
-    return 1
+    return itertools.repeat(1)
 
 def two_valid():
-    return 2
+    return itertools.repeat(2)
 
 def rand_valid():
-    return random.randrange(3)
+    while True:
+        yield random.randrange(3)
 
-class saw_valid:
-    def __init__(self):
-        self.last = 0
-        # Lie for TestFactory
-        self.__qualname__ = self.__class__.__qualname__
-
-    def __call__(self):
-        self.last += 1
-        if self.last > 2:
-            self.last = 0
-        return self.last
+def saw_valid():
+    return itertools.cycle(range(3))
 
 def with_valids(g, f):
-    for valids in (one_valid, two_valid, rand_valid, saw_valid()):
+    for valids in (one_valid, two_valid, rand_valid, saw_valid):
         async def test(*args, valids=valids, **kwargs):
             await f(*args, valids=valids, **kwargs)
         test.__name__ = f"{f.__name__}_{valids.__qualname__}"
@@ -112,8 +105,7 @@ async def send_recovered_bits(clk, data, valid, bits, valids):
     bits = iter(bits)
     await FallingEdge(clk)
     try:
-        while True:
-            v = valids()
+        for v in valids():
             if v == 0:
                 d = 'XX'
             elif v == 1:
