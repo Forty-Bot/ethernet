@@ -1,0 +1,38 @@
+name: Run test suite
+
+on:
+  push
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install dependencies missing in act
+        if: ${{ env.ACT }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-dev
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Install dependencies
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          sudo apt-get install -y fpga-icestorm iverilog nextpnr-ice40 yosys-dev
+          python3 -m venv venv
+          venv/bin/pip install -r requirements.txt
+      - name: Run tests
+        run: |
+          source venv/bin/activate
+          make -k test

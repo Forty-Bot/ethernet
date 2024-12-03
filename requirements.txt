@@ -1,0 +1,3 @@
+asyncstdlib==3.12.2
+cocotb @ git+https://git@github.com/Forty-Bot/cocotb.git@8810af1a66c461217dc00d0aa47043b8ea130f65
+find_libpython==0.3.0
